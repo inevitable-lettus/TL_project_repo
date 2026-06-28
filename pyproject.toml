@@ -1,0 +1,12 @@
+[project]
+name = "tl-project-repo"
+version = "0.1.0"
+description = "Makerspace project file store — FastAPI backend"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "minio",
+    "pydantic-settings",
+]
