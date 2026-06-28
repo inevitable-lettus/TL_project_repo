@@ -2,6 +2,8 @@
 
 Public-facing web app where a university makerspace's staff and students store and browse project files, with a private mode to hide selected projects from public view.
 
+**This is a production system in active use by the university Tinkerer Laboratory.** Security and reliability are first-class, not afterthoughts — guard auth/visibility boundaries, never expose internal services, fail loud on misconfig, keep the deploy reproducible.
+
 This file is the entry point for every Claude Code session. Read it first.
 
 ## Stack (settled — do not re-litigate)
@@ -43,6 +45,7 @@ Constraints, not prose. A readable, simple codebase is the goal — not a vibe-c
 - [design.md](design.md) — screen inventory, public-vs-private behavior, upload UX (pending→ready). No visual tokens — those live in the TypeUI skill.
 - [product.md](product.md) — who it's for, the problem, user stories, what's out of scope for v1.
 - [handoff.md](handoff.md) — dependency-ordered build milestones with a "done =" definition each.
+- [notes.md](notes.md) — plain-language developer notes (jargon explained, what each task built). Update alongside handoff.md after every task.
 
 ## How I like to work
 

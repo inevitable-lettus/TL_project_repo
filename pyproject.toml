@@ -9,4 +9,7 @@ dependencies = [
     "uvicorn[standard]",
     "minio",
     "pydantic-settings",
+    "sqlalchemy",
+    "psycopg[binary]",
+    "alembic",
 ]

@@ -4,15 +4,15 @@ Dependency-ordered milestones from empty repo to deployable. Each has a **done =
 
 ## Current status (2026-06-28)
 
-Pre-milestone-1, backend skeleton in place. No `docker-compose.yml` yet.
+Milestones 1–2 done. Compose owns the whole stack; manual `docker run` for MinIO retired.
 
-MinIO is up **manually** for local dev only — `docker run` container named `minio`, ports 9000 (S3 API) / 9001 (console), creds `minioadmin/minioadmin`, bucket `tinkerer-lab` created and private. Not yet a Compose service.
+`docker-compose.yml` (root): nginx (only published port, 80), frontend (placeholder static page), backend, db (Postgres 16, named volume `pgdata`), minio (named volume `miniodata`). db + minio have healthchecks; backend `depends_on` them `service_healthy`. Only nginx is reachable from the host — db/minio/backend ports stay internal. MinIO's public S3 route is still deferred to milestone 8. Secrets via gitignored `.env` (`env_file`); `.env.example` committed.
 
-Backend scaffold (`backend/app/`): `config.py` (env-driven `Settings` — MinIO creds, bucket, `MAX_FILE_SIZE` 2 GB placeholder), `storage.py` (MinIO client wrapper: `ensure_bucket`, `stat_object`, `remove_object`, `presigned_get_url`, `presigned_put_url` — never streams bytes), `main.py` (FastAPI app, `/health`, lifespan calls `ensure_bucket` so startup fails loud if MinIO is unreachable). Deps declared in `pyproject.toml` (`fastapi`, `uvicorn`, `minio`, `pydantic-settings`); stale `minio-test` workspace member removed. `.env` gitignored; `.env.example` committed.
+Backend scaffold (`backend/app/`): `config.py` (env-driven `Settings` — `database_url`, MinIO creds, bucket, `MAX_FILE_SIZE` 2 GB placeholder), `storage.py` (MinIO client wrapper: `ensure_bucket`, `stat_object`, `remove_object`, `presigned_get_url`, `presigned_put_url` — never streams bytes), `db.py` (sync SQLAlchemy engine, `SessionLocal`, `Base`, `get_db` dependency), `models.py` (`User`, `Project`, `File`), `main.py` (FastAPI app, `/health`; lifespan retries the DB connection then `ensure_bucket` — both fail loud if unreachable). Alembic under `backend/alembic/` with the initial migration.
 
-Run: `uv sync && uv run uvicorn backend.app.main:app --reload`.
+Run (Docker): `cp .env.example .env`, then `docker compose up -d --build`; migrate with `docker compose exec backend alembic -c backend/alembic.ini upgrade head` (always invoke alembic from the repo root / container WORKDIR so `backend.app` imports). App: `http://localhost/` (placeholder), `http://localhost/api/health`.
 
-Next: presigned upload + confirm endpoints (milestones 4–5). The PUT-side size cap (enforcement #2, `content-length-range`) needs a presigned POST policy at the endpoint layer — `presigned_put_url` is a plain PUT and can't carry it (noted in `storage.py`).
+Next: auth (milestone 3) — Google OAuth, `hd`-claim check, session JWT, `get_current_user`, staff allowlist.
 
 ## Schema reference (for milestone 2)
 
@@ -30,7 +30,7 @@ Next: presigned upload + confirm endpoints (milestones 4–5). The PUT-side size
    - **done =** `docker compose up` boots all services; nginx serves a frontend placeholder; backend health endpoint reachable through nginx.
 
 2. **DB + migrations**
-   - Alembic configured. First migration enables `pgcrypto`, creates all 4 tables + indexes above.
+   - Alembic configured. First migration enables `pgcrypto`, creates the 3 tables (`users`, `projects`, `files`) + indexes above (Alembic also adds its own `alembic_version` bookkeeping table).
    - **done =** migration applies cleanly; UUID PKs generate via `gen_random_uuid()`; downgrade works.
 
 3. **Auth**
