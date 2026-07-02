@@ -46,6 +46,19 @@ Presigned-for-everything. No permanent public URLs.
 
 > Note: "every fetch goes through FastAPI auth" means auth **checks visibility**, it does not **require login**. Public visitors are unauthenticated and still get URLs for public projects. The bucket is never anonymously readable — the presigned signature is the only way in.
 
+## Blog content + media resolution
+
+- Project write-ups are **TipTap JSON** stored in `projects.content` (JSONB). The backend validates on save: whitelisted node types only, and every media node's file id must belong to that project (rejects foreign/unknown ids).
+- Media nodes store **File ids, never URLs** — presigned URLs expire in minutes, so a stored URL would rot. Rendering a project page: fetch the project → collect embedded file ids → one batch call (`POST /projects/{id}/media-urls`) mints short-lived GET URLs for all of them → render. Videos play from a presigned `<video src>`.
+- `files.kind` separates **media** (embedded in the write-up) from **attachment** (downloads area). Both use the identical presigned upload flow; only where the UI surfaces them differs.
+- Avatars (`users.avatar_file_id`) and covers (`projects.cover_file_id`) are ordinary File rows through the same flow — no separate path.
+
+## Landing curation model
+
+- `projects.slider_pinned` (bool): staff pins a project into the landing slider. Slider feed = pinned public projects first, remaining slots filled randomly from public projects with a cover image. **Private projects never appear**, pinned or not.
+- `projects.featured_rank` (nullable int): non-null = featured, ordered ascending. Staff sets/reorders via the admin dashboard.
+- Both are pure DB writes; curation of a project that later goes private simply drops out of the feeds (the queries filter `is_public`).
+
 ## Cleanup job lifecycle
 
 Mandatory cron. Sweeps orphans left when a browser uploads but never confirms (or never uploads after a row is created).

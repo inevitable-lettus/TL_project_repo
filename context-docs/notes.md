@@ -115,6 +115,33 @@ cloud file store) but runs on our own server. We keep one private bucket (a
 Access is only ever granted through short-lived signed links the backend hands
 out. (The upload/download machinery comes in a later task.)
 
+### TipTap (the visual editor)
+Students write project pages like a blog post. **TipTap** is the editor library we
+use — it works like Google Docs: you type, make headings, and drop photos/videos
+right into the text. No special markup to learn. Behind the scenes the document
+is saved as structured **JSON** (a machine-readable outline of "heading, then
+paragraph, then image #123..."), not as raw HTML. That matters because embedded
+images are stored as *file references*, and the page swaps in fresh temporary
+links every time it's viewed (the signed links expire in minutes, so we never
+save a link itself).
+
+### JSONB
+Postgres column type for storing JSON documents (like the editor content above)
+inside a normal table row, in a form the database can search efficiently. Our
+`projects.content` column is JSONB.
+
+### E2E tests (Playwright)
+Two layers of tests keep the app trustworthy for ~100 students:
+- **Backend tests (pytest)** — call the API directly and check every rule
+  (visibility, size limits, permissions). Fast, run after every phase.
+- **End-to-end tests (Playwright)** — a robot browser that clicks through the
+  real site like a student would: log in, write a project, upload a photo,
+  publish, check a stranger can see it. Catches bugs the API tests can't (broken
+  buttons, wrong states shown).
+Google login can't run in a robot browser, so tests use a special login door
+that only opens when the app is started in test mode — it's impossible to
+enable in production.
+
 ### `.env` and secrets
 Passwords and keys (database password, storage keys) must never be hard-coded or
 committed to git. They live in a `.env` file that git ignores. Compose reads it
@@ -171,7 +198,24 @@ docker compose exec backend alembic -c backend/alembic.ini upgrade head  # creat
 docker compose down           # stop everything (add -v to also wipe data)
 ```
 
+### Task 3 — Scope expansion + docs sync (2026-07-02)
+The product grew from "file locker with a browse page" to a proper showcase site:
+- **Projects are blogs** — written in a visual editor (see TipTap above), with
+  photos and videos inline, plus a **downloads area** for files that shouldn't be
+  displayed (CAD files, 3D models, zips).
+- **Student profiles** — auto-created on first login; students add a description,
+  program, year, and photo. Profile pages are public and shareable.
+- **Landing page** — a big auto-rotating image slider (staff can pin projects
+  into it; the rest fill in randomly from public projects) and a staff-curated
+  "Featured projects" section.
+- **Admin happens in the browser** — staff get a dashboard for featuring,
+  pinning, promoting staff, and moderating. No code needed to run the platform.
+- **Design direction** — two TypeUI prompts (storytelling structure + nostalgia
+  style) set the look; two installed design skills review and refine it.
+All context docs were updated; `handoff.md` has the new phase list.
+
 ### What's next
-**Task 3 — Login (auth).** Let people sign in with their university Google
+**Phase 1 — Login (auth).** Let people sign in with their university Google
 account, reject non-university accounts, and remember who they are so the backend
-can enforce who's allowed to see/do what.
+can enforce who's allowed to see/do what. Includes setting up the backend test
+harness — every phase from now on ends with passing tests.

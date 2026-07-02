@@ -1,6 +1,6 @@
 # Tinkerer Lab Project Repository
 
-Public-facing web app where a university makerspace's staff and students store and browse project files, with a private mode to hide selected projects from public view.
+Public-facing web app where a university makerspace's staff and students store and browse project files, with a private mode to hide selected projects from public view. Each project is a blog-style page (rich text with inline photos/videos plus a downloads area); each student has a public profile page; staff curate the landing page (slider pins + featured projects) and manage users through an admin dashboard UI, never through code.
 
 **This is a production system in active use by the university Tinkerer Laboratory.** Security and reliability are first-class, not afterthoughts — guard auth/visibility boundaries, never expose internal services, fail loud on misconfig, keep the deploy reproducible.
 
@@ -23,7 +23,7 @@ This file is the entry point for every Claude Code session. Read it first.
 4. **All limits via env vars, never hardcoded, never effectively unlimited.** `MAX_FILE_SIZE`, per-user/project quota. Real placeholder default: 2GB/file. Enforce size in three places (see architecture.md).
 5. **The cleanup job is mandatory.** Pending File rows older than ~1hr → delete the orphaned MinIO object, then the row.
 6. **Project delete must purge MinIO objects first, then the DB row.** `ON DELETE CASCADE` only removes File rows, not MinIO objects. Cascade alone leaks storage.
-7. **Visual styling is owned by the TypeUI design skill** (SKILL.md from typeui.sh) — the single source of truth for typography, color tokens, spacing, component states. Never invent a visual system or hardcode colors/spacing. **If the skill is not installed, leave styling as TODO — do not guess.** (As of last check: not installed.)
+7. **Visual design flow is fixed:** base direction comes from two TypeUI prompts — the **storytelling** flow (page structure/narrative) and the **nostalgia** style (visual voice), both pasted by the owner when frontend work starts — then refined and reviewed with the installed `impeccable` and `design-taste-frontend` skills. Bold yet simple; smooth transform/opacity animations (never linear PPT fades); sharp bold self-hosted fonts; must not look AI-generated. Never invent a separate visual system or hardcode ad-hoc colors/spacing outside the tokens this flow produces.
 
 ## Coding rules
 
@@ -41,11 +41,11 @@ Constraints, not prose. A readable, simple codebase is the goal — not a vibe-c
 
 ## Other docs
 
-- [architecture.md](architecture.md) — components, the presigned flows, cleanup, auth/JWT, Docker/nginx topology, where each secret lives.
-- [design.md](design.md) — screen inventory, public-vs-private behavior, upload UX (pending→ready). No visual tokens — those live in the TypeUI skill.
-- [product.md](product.md) — who it's for, the problem, user stories, what's out of scope for v1.
-- [handoff.md](handoff.md) — dependency-ordered build milestones with a "done =" definition each.
-- [notes.md](notes.md) — plain-language developer notes (jargon explained, what each task built). Update alongside handoff.md after every task.
+- [context-docs/architecture.md](context-docs/architecture.md) — components, the presigned flows, cleanup, auth/JWT, Docker/nginx topology, where each secret lives.
+- [context-docs/design.md](context-docs/design.md) — screen inventory, public-vs-private behavior, upload UX (pending→ready). No visual tokens — those come from the design flow in hard rule 7.
+- [context-docs/product.md](context-docs/product.md) — who it's for, the problem, user stories, what's out of scope for v1.
+- [context-docs/handoff.md](context-docs/handoff.md) — dependency-ordered build phases with a "done =" definition each.
+- [context-docs/notes.md](context-docs/notes.md) — plain-language developer notes (jargon explained, what each task built). Update alongside handoff.md after every task.
 
 ## How I like to work
 
