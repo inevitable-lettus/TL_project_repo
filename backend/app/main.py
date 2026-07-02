@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
+from .auth import router as auth_router
 from .db import engine
 from .storage import ensure_bucket
 
@@ -30,6 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Tinkerer Lab", lifespan=lifespan)
+app.include_router(auth_router)
 
 
 @app.get("/health")

@@ -1,8 +1,12 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
+
+    environment: str = "development"  # development | test | production
+    public_url: str = "http://localhost"
 
     database_url: str
 
@@ -14,6 +18,34 @@ class Settings(BaseSettings):
 
     # Placeholder default (2 GB). Real per-deploy value comes from the env.
     max_file_size: int = 2 * 1024**3
+
+    google_client_id: str
+    google_client_secret: str
+    google_hosted_domain: str
+    jwt_secret: str
+    session_ttl_seconds: int = 7 * 24 * 3600
+    # Comma-separated emails that get the staff role on login (bootstrap only;
+    # after that staff manage roles via the admin UI).
+    staff_emails: str = ""
+    # Enables the Playwright login endpoint. Only legal when environment=test.
+    auth_test_mode: bool = False
+
+    @property
+    def staff_email_set(self) -> set[str]:
+        return {e.strip().lower() for e in self.staff_emails.split(",") if e.strip()}
+
+    @model_validator(mode="after")
+    def _test_mode_only_in_test_env(self) -> "Settings":
+        if self.auth_test_mode and self.environment != "test":
+            raise ValueError("AUTH_TEST_MODE requires ENVIRONMENT=test")
+        return self
+
+    @model_validator(mode="after")
+    def _jwt_secret_long_enough(self) -> "Settings":
+        # RFC 7518: HS256 keys must be >= 32 bytes.
+        if len(self.jwt_secret.encode()) < 32:
+            raise ValueError("JWT_SECRET must be at least 32 bytes")
+        return self
 
 
 settings = Settings()

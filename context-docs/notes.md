@@ -214,8 +214,44 @@ The product grew from "file locker with a browse page" to a proper showcase site
   style) set the look; two installed design skills review and refine it.
 All context docs were updated; `handoff.md` has the new phase list.
 
+### Phase 1 — Login (auth) (2026-07-02)
+People sign in with their university Google account; everyone else is turned
+away. How it works, in plain terms:
+
+- Clicking "log in" sends you to Google. Google asks you to pick an account,
+  then sends you back to us with a one-time code. Our backend trades that code
+  for a verified statement from Google saying who you are (name, email, and
+  which organization the account belongs to).
+- The **organization check** is the security core: Google marks Workspace
+  accounts with their domain (the `hd` field). If it isn't our university's
+  domain — including personal Gmail, which has none — login is refused and no
+  account is created.
+- On a first successful login an account is **created automatically** (role:
+  student). Emails listed in the `STAFF_EMAILS` setting become staff instead —
+  that's only for bootstrapping the first admins; after the admin dashboard
+  exists, staff manage roles there.
+- To remember you, the backend issues its own signed pass (a **JWT**) and stores
+  it in an **httpOnly cookie** — a cookie page scripts can't read, which blunts
+  token-theft attacks. Every later request just carries the cookie.
+- Endpoints: `/auth/login`, `/auth/callback`, `/auth/logout`, `/auth/me`
+  ("who am I?"), plus `/auth/test-login` — the robot-browser door described
+  under *E2E tests* above, which physically refuses to open unless the app is
+  started in test mode.
+
+**Testing (new, permanent):** `backend/tests/` now holds a pytest suite that
+runs *inside the backend container* against a scratch database
+(`tinkerer_test`) it creates itself: `docker compose exec backend pytest`.
+18 tests cover: non-uni rejection, session issue/expiry/forgery, staff
+bootstrap, double-login not duplicating accounts, staff-only route gating, and
+the test-door staying shut outside test mode. Every phase from here ends with
+its tests green.
+
+**Still needed from us:** a real Google OAuth client (ID + secret) and the
+university domain in `.env` — placeholders sit there now, so real login won't
+work until those are filled (the automated tests don't need them).
+
 ### What's next
-**Phase 1 — Login (auth).** Let people sign in with their university Google
-account, reject non-university accounts, and remember who they are so the backend
-can enforce who's allowed to see/do what. Includes setting up the backend test
-harness — every phase from now on ends with passing tests.
+**Phase 2 — Files.** The real upload/download machinery: permission slips
+(presigned URLs), the pending→ready confirm step, size limits enforced in three
+places, the janitor job for abandoned uploads, and the second database
+migration (profile fields, blog content, featured/slider flags).
