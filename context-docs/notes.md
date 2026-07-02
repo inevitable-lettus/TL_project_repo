@@ -250,8 +250,36 @@ its tests green.
 university domain in `.env` — placeholders sit there now, so real login won't
 work until those are filled (the automated tests don't need them).
 
+### Phase 2 — Files (2026-07-02)
+The real upload/download machinery, promoted from the demo into production code:
+
+- **Second migration.** The database gained the new-scope columns: profile
+  fields on users, blog content + cover + featured/slider flags on projects,
+  and a `kind` on files (*media* = shown inside the write-up, *attachment* =
+  the downloads area). Applied, rolled back, and re-applied cleanly.
+- **Upload** (`files.py`): ask for a slot → backend checks you may edit that
+  project, checks the declared size against `MAX_FILE_SIZE` *and* your total
+  storage against `MAX_USER_STORAGE`, writes a pending row, and returns a
+  signed **upload form** for MinIO. That form carries a size range MinIO
+  enforces itself — so even a lying client can't push more bytes than allowed
+  (enforcement #2 of 3). Then confirm: the backend asks MinIO for the *actual*
+  size (enforcement #3, the authoritative one) and either flips the file to
+  ready or deletes both the bytes and the row.
+- **Download**: mint-on-demand signed links, gated by visibility (public
+  project → anyone, private → owner/staff only; outsiders get a 404 that
+  doesn't reveal the project exists). Plus a **batch endpoint** that resolves
+  all the images/videos of one project page in a single call — blog pages will
+  embed many.
+- **The janitor** (`cleanup.py`): its own little container next to the backend,
+  waking every 10 minutes to delete uploads that were started but never
+  confirmed (bytes first, then the row) once they're an hour old.
+- **Tests: 31 passing**, now covering the full upload→confirm→download round
+  trip against the real MinIO, all three oversize rejection points, quota,
+  the visibility matrix (anonymous/stranger/owner/staff × public/private),
+  the janitor sweep, and object purge on project delete.
+
 ### What's next
-**Phase 2 — Files.** The real upload/download machinery: permission slips
-(presigned URLs), the pending→ready confirm step, size limits enforced in three
-places, the janitor job for abandoned uploads, and the second database
-migration (profile fields, blog content, featured/slider flags).
+**Phase 3 — Projects, profiles, admin (backend).** Create/edit projects with
+blog content (validated so embedded media really belongs to the project),
+public browse/slider/featured feeds, profile pages, and the staff-only admin
+endpoints the dashboard will sit on.

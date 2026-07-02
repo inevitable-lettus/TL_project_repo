@@ -7,11 +7,12 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -39,6 +40,18 @@ class User(Base):
     role: Mapped[str] = mapped_column(
         String, nullable=False, server_default="student"
     )
+    bio: Mapped[str | None] = mapped_column(String)
+    program: Mapped[str | None] = mapped_column(String)
+    enrollment_year: Mapped[int | None] = mapped_column(Integer)
+    # use_alter breaks the users -> files -> projects -> users FK cycle.
+    avatar_file_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "files.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_users_avatar_file_id",
+        )
+    )
     created_at: Mapped[datetime] = created_at_col()
 
     projects: Mapped[list["Project"]] = relationship(back_populates="owner")
@@ -46,6 +59,18 @@ class User(Base):
 
 class Project(Base):
     __tablename__ = "projects"
+    __table_args__ = (
+        Index(
+            "ix_projects_featured_rank",
+            "featured_rank",
+            postgresql_where=text("featured_rank IS NOT NULL"),
+        ),
+        Index(
+            "ix_projects_slider_pinned",
+            "slider_pinned",
+            postgresql_where=text("slider_pinned"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = uuid_pk()
     title: Mapped[str] = mapped_column(String, nullable=False)
@@ -58,11 +83,27 @@ class Project(Base):
     is_public: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false"), index=True
     )
+    # TipTap document; media nodes reference File ids, never URLs.
+    content: Mapped[dict | None] = mapped_column(JSONB)
+    cover_file_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "files.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_projects_cover_file_id",
+        )
+    )
+    featured_rank: Mapped[int | None] = mapped_column(Integer)
+    slider_pinned: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
     created_at: Mapped[datetime] = created_at_col()
 
     owner: Mapped[User] = relationship(back_populates="projects")
     files: Mapped[list["File"]] = relationship(
-        back_populates="project", cascade="all, delete-orphan"
+        back_populates="project",
+        cascade="all, delete-orphan",
+        foreign_keys="File.project_id",
     )
 
 
@@ -83,6 +124,13 @@ class File(Base):
     status: Mapped[str] = mapped_column(
         String, nullable=False, server_default="pending"
     )
+    # 'media' renders inside the blog content; 'attachment' lists in the
+    # project's downloads area.
+    kind: Mapped[str] = mapped_column(
+        String, nullable=False, server_default="attachment"
+    )
     created_at: Mapped[datetime] = created_at_col()
 
-    project: Mapped[Project] = relationship(back_populates="files")
+    project: Mapped[Project] = relationship(
+        back_populates="files", foreign_keys=[project_id]
+    )

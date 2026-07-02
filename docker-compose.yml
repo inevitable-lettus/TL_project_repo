@@ -29,6 +29,18 @@ services:
       minio:
         condition: service_healthy
 
+  cleanup:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["python", "-m", "backend.app.cleanup"]
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
   db:
     image: postgres:16-alpine
     environment:

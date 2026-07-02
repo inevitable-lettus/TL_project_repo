@@ -14,10 +14,13 @@ settings.auth_test_mode = True
 settings.jwt_secret = "test-secret-0123456789abcdef0123456789abcdef"
 settings.google_hosted_domain = "uni.edu"
 settings.staff_emails = "staff@uni.edu"
+settings.minio_bucket = "test-bucket"
 
-from backend.app import auth  # noqa: E402
+from backend.app import auth, storage  # noqa: E402
 from backend.app.db import Base, get_db  # noqa: E402
 from backend.app.main import app  # noqa: E402
+
+storage.ensure_bucket()
 
 TEST_DB_NAME = "tinkerer_test"
 
@@ -38,10 +41,12 @@ def _create_test_database() -> str:
 test_engine = create_engine(_create_test_database())
 TestSession = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 
+# Wipe whatever a previous run left behind, whatever schema shape it had.
 with test_engine.connect() as conn:
+    conn.execute(text("DROP SCHEMA public CASCADE"))
+    conn.execute(text("CREATE SCHEMA public"))
     conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
     conn.commit()
-Base.metadata.drop_all(test_engine)
 Base.metadata.create_all(test_engine)
 
 
@@ -67,6 +72,8 @@ def clean_tables() -> Iterator[None]:
     with test_engine.connect() as conn:
         conn.execute(text("TRUNCATE users, projects, files CASCADE"))
         conn.commit()
+    for obj in storage.client.list_objects(settings.minio_bucket, recursive=True):
+        storage.client.remove_object(settings.minio_bucket, obj.object_name)
 
 
 @pytest.fixture

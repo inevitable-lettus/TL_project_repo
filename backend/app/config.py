@@ -18,6 +18,11 @@ class Settings(BaseSettings):
 
     # Placeholder default (2 GB). Real per-deploy value comes from the env.
     max_file_size: int = 2 * 1024**3
+    # Per-user total storage across all their projects (20 GB placeholder).
+    max_user_storage: int = 20 * 1024**3
+    # Cleanup sweep: how often it runs / how old a pending upload may get.
+    cleanup_interval_seconds: int = 600
+    pending_max_age_seconds: int = 3600
 
     google_client_id: str
     google_client_secret: str

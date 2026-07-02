@@ -1,7 +1,7 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from minio import Minio
-from minio.datatypes import Object
+from minio.datatypes import Object, PostPolicy
 
 from .config import settings
 
@@ -34,11 +34,20 @@ def presigned_get_url(
     )
 
 
-def presigned_put_url(
-    object_key: str, expires: timedelta = timedelta(minutes=15)
-) -> str:
-    # The size cap (architecture enforcement #2, content-length-range) is applied at the
-    # upload-endpoint layer via a presigned POST policy — a plain PUT URL can't carry it.
-    return client.presigned_put_object(
-        settings.minio_bucket, object_key, expires=expires
+def presigned_post(
+    object_key: str, max_size: int, expires: timedelta = timedelta(minutes=15)
+) -> dict:
+    """Presigned POST form. The content-length-range condition makes MinIO
+    itself reject oversized uploads (architecture enforcement #2)."""
+    policy = PostPolicy(
+        settings.minio_bucket, datetime.now(timezone.utc) + expires
     )
+    policy.add_equals_condition("key", object_key)
+    policy.add_content_length_range_condition(1, max_size)
+    fields = client.presigned_post_policy(policy)
+    fields["key"] = object_key  # SDK returns only signature fields
+    scheme = "https" if settings.minio_secure else "http"
+    return {
+        "url": f"{scheme}://{settings.minio_endpoint}/{settings.minio_bucket}",
+        "fields": fields,
+    }
