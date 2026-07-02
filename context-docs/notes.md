@@ -278,8 +278,38 @@ The real upload/download machinery, promoted from the demo into production code:
   the visibility matrix (anonymous/stranger/owner/staff × public/private),
   the janitor sweep, and object purge on project delete.
 
+### Phase 3 — Projects, profiles, admin (backend) (2026-07-02)
+The whole "brain" of the site is now in place — every button the future pages
+need already has a working endpoint behind it:
+
+- **Projects**: create, edit, delete, and the public/private toggle. The blog
+  write-up is saved as editor JSON, and the backend *validates* it on save:
+  only known block types are allowed (no sneaking in raw HTML), links must be
+  normal web/mail links (blocks the `javascript:` trick), and every embedded
+  image/video must be a file that really belongs to that project — you can't
+  reference someone else's uploads. Deleting a project wipes its storage bytes
+  first, then the records.
+- **Feeds for the landing page**: a slider feed (staff-pinned projects first,
+  the rest filled randomly from public projects that have a cover image) and a
+  featured feed (staff-ordered). Private projects can never leak into either.
+- **Profiles**: anyone can view `/users/{id}` — name, bio, program, year,
+  avatar, and their *public* projects (owners and staff also see private ones).
+  Email addresses are never shown. Students edit their own profile via
+  `PATCH /users/me`.
+- **Avatars**: a small schema change (migration 0003) lets a file belong to a
+  *user* instead of a project, since profile photos aren't part of any project.
+  Same upload machinery; must be an image; replacing your photo deletes the old
+  one properly.
+- **Admin endpoints** (staff only): search users, promote/demote staff (you
+  can't demote *yourself* — otherwise the last admin could lock everyone out),
+  set the ordered featured list, pin/unpin slider projects. Only public
+  projects can be featured or pinned.
+- **Tests: 53 passing** — ownership rules, the content validator's rejections,
+  visibility on every read path, slider composition, featured ordering, and
+  every admin route confirmed staff-only.
+
 ### What's next
-**Phase 3 — Projects, profiles, admin (backend).** Create/edit projects with
-blog content (validated so embedded media really belongs to the project),
-public browse/slider/featured feeds, profile pages, and the staff-only admin
-endpoints the dashboard will sit on.
+**Phase 4 — Frontend foundation.** The real Next.js website replaces the
+placeholder page: design system (the two TypeUI prompts + the design skills),
+fonts, app shell, login flow, and the robot-browser (Playwright) test harness.
+**Needs from us: the two TypeUI prompts (storytelling + nostalgia).**

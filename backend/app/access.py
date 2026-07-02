@@ -3,7 +3,7 @@ import uuid
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from .models import Project, User
+from .models import File, Project, User
 
 
 def get_project_or_404(db: Session, project_id: uuid.UUID) -> Project:
@@ -37,3 +37,21 @@ def require_can_edit(project: Project, user: User) -> None:
     if project.is_public:
         raise HTTPException(status_code=403, detail="Not your project")
     raise HTTPException(status_code=404, detail="Project not found")
+
+
+def require_file_view(file: File, user: User | None) -> None:
+    # User-scoped files (avatars) are public — profile pages are public.
+    if file.project_id is not None:
+        require_can_view(file.project, user)
+
+
+def require_file_edit(file: File, user: User) -> None:
+    if file.project_id is not None:
+        require_can_edit(file.project, user)
+    elif not (file.owner_id == user.id or user.role == "staff"):
+        raise HTTPException(status_code=404, detail="File not found")
+
+
+def file_charged_owner_id(file: File) -> uuid.UUID:
+    """Whose storage quota this file counts against."""
+    return file.owner_id if file.project_id is None else file.project.owner_id

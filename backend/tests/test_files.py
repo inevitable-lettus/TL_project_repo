@@ -1,64 +1,21 @@
-import io
 import uuid
 from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import select
 
 from backend.app import cleanup, storage
 from backend.app.config import settings
 from backend.app.files import purge_project_objects, user_storage_used
-from backend.app.main import app
-from backend.app.models import File, Project, User
-
-
-def make_client() -> TestClient:
-    return TestClient(app, follow_redirects=False)
-
-
-def login(client: TestClient, email: str, name: str = "Someone") -> dict:
-    response = client.post("/auth/test-login", json={"email": email, "name": name})
-    assert response.status_code == 200
-    return response.json()
-
-
-def make_project(db, owner_id: str, is_public: bool = False) -> Project:
-    project = Project(
-        title="Robot Arm", owner_id=uuid.UUID(owner_id), is_public=is_public
-    )
-    db.add(project)
-    db.commit()
-    db.refresh(project)
-    return project
-
-
-def request_slot(client: TestClient, project_id, size: int, **overrides) -> httpx.Response:
-    body = {
-        "filename": "part one.stl",
-        "size": size,
-        "mime_type": "model/stl",
-        "kind": "attachment",
-        **overrides,
-    }
-    return client.post(f"/projects/{project_id}/files", json=body)
-
-
-def upload_bytes(slot: dict, data: bytes) -> httpx.Response:
-    return httpx.post(
-        slot["upload_url"],
-        data=slot["upload_fields"],
-        files={"file": (slot["file"]["filename"], data)},
-    )
-
-
-def full_upload(client: TestClient, project_id, data: bytes) -> dict:
-    slot = request_slot(client, project_id, size=len(data)).json()
-    assert upload_bytes(slot, data).status_code == 204
-    confirmed = client.post(f"/files/{slot['file']['id']}/confirm")
-    assert confirmed.status_code == 200
-    return confirmed.json()
+from backend.app.models import File, Project
+from backend.tests.helpers import (
+    full_upload,
+    login,
+    make_client,
+    make_project,
+    request_slot,
+    upload_bytes,
+)
 
 
 @pytest.fixture

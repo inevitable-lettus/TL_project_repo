@@ -9,7 +9,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from . import storage
-from .access import get_project_or_404, require_can_edit, require_can_view
+from .access import (
+    file_charged_owner_id,
+    get_project_or_404,
+    require_can_edit,
+    require_can_view,
+    require_file_edit,
+    require_file_view,
+)
 from .auth import get_current_user, get_current_user_optional
 from .config import settings
 from .db import get_db
@@ -26,10 +33,13 @@ def sanitize_filename(filename: str) -> str:
 
 
 def user_storage_used(db: Session, owner_id: uuid.UUID) -> int:
+    # Project files count against the project owner, user files (avatars)
+    # against their direct owner.
     return db.execute(
         select(func.coalesce(func.sum(File.size), 0))
-        .join(Project, File.project_id == Project.id)
-        .where(Project.owner_id == owner_id)
+        .select_from(File)
+        .outerjoin(Project, File.project_id == Project.id)
+        .where(func.coalesce(File.owner_id, Project.owner_id) == owner_id)
     ).scalar_one()
 
 
@@ -90,12 +100,51 @@ def create_upload_slot(
     db.commit()
     db.refresh(file)
 
-    upload = storage.presigned_post(object_key, settings.max_file_size)
+    return _slot_response(file)
+
+
+def _slot_response(file: File) -> UploadSlotOut:
+    upload = storage.presigned_post(file.object_key, settings.max_file_size)
     return UploadSlotOut(
         file=FileOut.model_validate(file),
         upload_url=upload["url"],
         upload_fields=upload["fields"],
     )
+
+
+class AvatarSlotIn(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    size: int = Field(gt=0)
+    mime_type: str = Field(min_length=1, max_length=255)
+
+
+@router.post("/users/me/avatar", response_model=UploadSlotOut)
+def create_avatar_slot(
+    body: AvatarSlotIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> UploadSlotOut:
+    if not body.mime_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="avatar must be an image")
+    if body.size > settings.max_file_size:
+        raise oversize_error()
+    if user_storage_used(db, user.id) + body.size > settings.max_user_storage:
+        raise HTTPException(status_code=400, detail="storage quota exceeded")
+
+    file_id = uuid.uuid4()
+    file = File(
+        id=file_id,
+        owner_id=user.id,
+        filename=body.filename,
+        object_key=f"avatars/{user.id}/{file_id}/{sanitize_filename(body.filename)}",
+        size=body.size,
+        mime_type=body.mime_type,
+        kind="media",
+    )
+    db.add(file)
+    db.commit()
+    db.refresh(file)
+    return _slot_response(file)
 
 
 @router.post("/files/{file_id}/confirm", response_model=FileOut)
@@ -107,8 +156,7 @@ def confirm_upload(
     file = db.get(File, file_id)
     if file is None:
         raise HTTPException(status_code=404, detail="File not found")
-    project = file.project
-    require_can_edit(project, user)
+    require_file_edit(file, user)
     if file.status == "ready":
         return file
 
@@ -127,7 +175,9 @@ def confirm_upload(
         db.delete(file)
         db.commit()
         raise oversize_error()
-    used_without_this = user_storage_used(db, project.owner_id) - file.size
+    used_without_this = (
+        user_storage_used(db, file_charged_owner_id(file)) - file.size
+    )
     if used_without_this + stat.size > settings.max_user_storage:
         storage.remove_object(file.object_key)
         db.delete(file)
@@ -157,7 +207,7 @@ def download_url(
     file = db.get(File, file_id)
     if file is None or file.status != "ready":
         raise HTTPException(status_code=404, detail="File not found")
-    require_can_view(file.project, user)
+    require_file_view(file, user)
     return DownloadUrlOut(
         url=storage.presigned_get_url(file.object_key),
         filename=file.filename,

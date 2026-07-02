@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # Cleanup sweep: how often it runs / how old a pending upload may get.
     cleanup_interval_seconds: int = 600
     pending_max_age_seconds: int = 3600
+    # Landing slider slot count (pinned first, random public fill).
+    slider_size: int = 8
 
     google_client_id: str
     google_client_secret: str

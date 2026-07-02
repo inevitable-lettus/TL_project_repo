@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
@@ -109,12 +110,22 @@ class Project(Base):
 
 class File(Base):
     __tablename__ = "files"
-    __table_args__ = (Index("ix_files_status_created_at", "status", "created_at"),)
+    __table_args__ = (
+        Index("ix_files_status_created_at", "status", "created_at"),
+        CheckConstraint(
+            "project_id IS NOT NULL OR owner_id IS NOT NULL",
+            name="ck_files_project_or_owner",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = uuid_pk()
-    project_id: Mapped[uuid.UUID] = mapped_column(
+    # Either project-scoped (blog media / attachments) or user-scoped (avatar).
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("projects.id", ondelete="CASCADE"),
-        nullable=False,
+        index=True,
+    )
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE", name="fk_files_owner_id"),
         index=True,
     )
     filename: Mapped[str] = mapped_column(String, nullable=False)
@@ -131,6 +142,6 @@ class File(Base):
     )
     created_at: Mapped[datetime] = created_at_col()
 
-    project: Mapped[Project] = relationship(
+    project: Mapped[Project | None] = relationship(
         back_populates="files", foreign_keys=[project_id]
     )
