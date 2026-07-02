@@ -10,11 +10,9 @@ services:
       - backend
 
   frontend:
-    image: nginx:alpine
-    volumes:
-      - ./frontend/placeholder:/usr/share/nginx/html:ro
+    build: ./frontend
     expose:
-      - "80"
+      - "3000"
 
   backend:
     build:

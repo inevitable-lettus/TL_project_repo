@@ -308,8 +308,28 @@ need already has a working endpoint behind it:
   visibility on every read path, slider composition, featured ordering, and
   every admin route confirmed staff-only.
 
+### Phase 4a — Frontend scaffold (2026-07-02)
+The real website skeleton now runs in Docker instead of the placeholder page:
+
+- **Next.js** (the React framework) app in `frontend/`, built into its own
+  container and served through nginx like everything else. One
+  `docker compose up -d --build` boots the entire site.
+- **App shell**: header with login/logout (it asks the backend "who am I?" and
+  shows My projects / Admin links accordingly), footer, and a proper
+  404 page. The landing page is a stub until the design pass.
+- **API client** (`frontend/lib/api.ts`): one typed module the whole site uses
+  to talk to the backend — pages never hand-roll requests. It also contains
+  the direct-to-storage upload helper with a progress callback.
+- **Robot-browser tests** (Playwright): a headless Chrome clicks through the
+  real running site. 4 smoke tests pass (shell renders, login redirects to
+  Google, 404 works, backend reachable). Later phases add full journeys.
+- Gotchas we hit (recorded so nobody re-hits them): the npm lockfile must be
+  generated for Linux (done via a throwaway container), and nginx needs a
+  restart after the frontend container is recreated or it 502s (proper fix in
+  Phase 8).
+
 ### What's next
-**Phase 4 — Frontend foundation.** The real Next.js website replaces the
-placeholder page: design system (the two TypeUI prompts + the design skills),
-fonts, app shell, login flow, and the robot-browser (Playwright) test harness.
-**Needs from us: the two TypeUI prompts (storytelling + nostalgia).**
+**Phase 4b — the design pass.** Blocked on one thing: **paste the two TypeUI
+prompts (storytelling + nostalgia)**. Then: fonts, colors, spacing tokens, and
+motion rules get applied to the shell, reviewed with the two design skills —
+and Phase 5 builds the landing slider and public pages on top.
