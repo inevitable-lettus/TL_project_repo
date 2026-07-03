@@ -328,8 +328,30 @@ The real website skeleton now runs in Docker instead of the placeholder page:
   restart after the frontend container is recreated or it 502s (proper fix in
   Phase 8).
 
+### Phase 4b — the design pass (2026-07-03)
+The site now has its visual identity: a **nostalgic desktop-OS look** — a warm
+orange "wallpaper" behind everything, content presented inside bordered
+"windows" with title bars (like a vintage Mac/Windows desktop), cream paper
+surfaces in light mode and a CRT-at-night espresso in dark mode.
+
+- The look comes from the **nostalgia** design prompt the owner installed as a
+  project skill (`.claude/skills/nostalgia/` — a folder of spec files listing
+  every color, font size, border, and shadow). The second prompt
+  (**storytelling**, for page narrative) was never supplied, so page structure
+  follows the screen inventory in design.md instead.
+- **Design tokens** (named colors like `heading`, `border-default`) live as CSS
+  variables in one file (`globals.css`). Light and dark values sit side by
+  side and the browser picks automatically — components never hardcode colors.
+- **Fonts are self-hosted**: Newsreader (literary serif, headings), DM Sans
+  (clean sans, body/UI), Geist Mono (code/labels). Next.js downloads them at
+  build time and serves them from our own domain — no Google requests from
+  visitors' browsers.
+- **Reusable building blocks** (`components/ui.tsx`): `Window` (title bar +
+  body), `Panel`, `Button` (five retro variants with a pressed-key effect),
+  `SysLabel` (mono metadata text). Later pages compose these instead of
+  re-styling from scratch.
+- Verified in light and dark mode; all checks and smoke tests green.
+
 ### What's next
-**Phase 4b — the design pass.** Blocked on one thing: **paste the two TypeUI
-prompts (storytelling + nostalgia)**. Then: fonts, colors, spacing tokens, and
-motion rules get applied to the shell, reviewed with the two design skills —
-and Phase 5 builds the landing slider and public pages on top.
+**Phase 5 — public pages**: the landing slider + featured grid, the browse
+grid, the blog-style project page, and student profiles.

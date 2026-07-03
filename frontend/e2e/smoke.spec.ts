@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("home page renders the shell", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("navigation")).toContainText("Tinkerer Lab");
+  await expect(page.getByRole("navigation")).toContainText("Tinkerer_Lab");
   await expect(page.getByTestId("login-link")).toBeVisible();
 });
 

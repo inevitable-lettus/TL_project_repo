@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { User } from "@/lib/types";
 
+const menuLink =
+  "rounded-base px-2.5 py-1 text-[13px] font-medium text-heading " +
+  "transition-colors duration-[120ms] hover:bg-neutral-secondary-medium";
+
 export function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -23,19 +27,28 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <a href="/api/auth/login" data-testid="login-link">
+      <a href="/api/auth/login" data-testid="login-link" className={menuLink}>
         Log in
       </a>
     );
   }
 
   return (
-    <div className="flex items-center gap-4" data-testid="user-menu">
-      <Link href="/dashboard">My projects</Link>
-      {user.role === "staff" && <Link href="/admin">Admin</Link>}
-      <Link href={`/users/${user.id}`}>{user.name}</Link>
+    <div className="flex items-center gap-1" data-testid="user-menu">
+      <Link href="/dashboard" className={menuLink}>
+        My projects
+      </Link>
+      {user.role === "staff" && (
+        <Link href="/admin" className={menuLink}>
+          Admin
+        </Link>
+      )}
+      <Link href={`/users/${user.id}`} className={menuLink}>
+        {user.name}
+      </Link>
       <button
         type="button"
+        className={menuLink}
         onClick={() => api.logout().then(() => window.location.assign("/"))}
       >
         Log out
