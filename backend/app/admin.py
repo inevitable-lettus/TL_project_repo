@@ -3,16 +3,44 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select, update
+from sqlalchemy.orm import Session, selectinload
 
 from .access import get_project_or_404
 from .auth import require_staff
 from .db import get_db
 from .models import Project, User
+from .projects import ProjectPage, project_item
 from .schemas import UserOut
 
 router = APIRouter(prefix="/admin")
+
+
+@router.get("/projects", response_model=ProjectPage)
+def list_all_projects(
+    db: Session = Depends(get_db),
+    staff: User = Depends(require_staff),
+    q: str = Query(default="", max_length=200),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> ProjectPage:
+    # Moderation view: every project, public and private.
+    query = select(Project).options(selectinload(Project.owner))
+    if q:
+        query = query.join(User, Project.owner_id == User.id).where(
+            Project.title.ilike(f"%{q}%") | User.name.ilike(f"%{q}%")
+        )
+    total = db.execute(
+        select(func.count()).select_from(query.subquery())
+    ).scalar_one()
+    projects = (
+        db.execute(
+            query.order_by(Project.created_at.desc()).limit(limit).offset(offset)
+        )
+        .scalars()
+        .all()
+    )
+    return ProjectPage(items=[project_item(p) for p in projects], total=total)
 
 
 @router.get("/users", response_model=list[UserOut])

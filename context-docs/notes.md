@@ -405,6 +405,28 @@ Students can now write their project pages themselves:
   2 GB).
 - **Tests**: 4 new Playwright journeys (15 total) + 56 backend tests, green.
 
+### Phase 7 — admin dashboard (2026-07-04)
+Staff now run the site entirely from the browser — no code, ever:
+
+- **`/admin`** is staff-only. A student (or logged-out visitor) who types the
+  URL gets the same 404 as any wrong address — it doesn't even admit the page
+  exists.
+- **Curation tab**: pick which public projects are *featured* on the landing
+  page and drag their order (up/down buttons); pin projects to lead the
+  slideshow (projects without a cover image are marked, since the slider
+  can't show them); a preview link opens the landing page as visitors see it.
+- **People tab**: search anyone by name/email, promote to staff or demote.
+  The "Demote" button is disabled on yourself — the backend refuses it too —
+  so the last staff member can never lock everyone out.
+- **Moderation tab**: every project on the site, including private ones.
+  Staff can open any project in the same editor students use, hide a public
+  project instantly (one click → it 404s for visitors), or delete it
+  outright (files purged first, as always).
+- One new backend endpoint (`GET /admin/projects`) lists all projects for
+  the moderation view; everything else reuses APIs from Phase 3.
+- **Tests**: 4 new Playwright journeys (19 total) + 57 backend tests, green.
+
 ### What's next
-**Phase 7 — admin dashboard UI**: `/admin` with Curation (feature + reorder,
-slider pins), People (promote/demote), and Moderation tabs.
+**Phase 8 — hardening + deploy**: backup service, seed script, full
+from-scratch E2E (`down -v && up && migrate && seed && test`), light load
+sanity, and the public route once IT provides it.

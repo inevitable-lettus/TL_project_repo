@@ -98,8 +98,13 @@ export const api = {
       cookie,
     }),
 
-  adminUsers: (q = "") =>
-    request<User[]>(`/admin/users?q=${encodeURIComponent(q)}`),
+  adminUsers: (q = "", cookie?: string) =>
+    request<User[]>(`/admin/users?q=${encodeURIComponent(q)}`, { cookie }),
+  adminProjects: (q = "", cookie?: string) =>
+    request<ProjectPage>(
+      `/admin/projects?q=${encodeURIComponent(q)}&limit=200`,
+      { cookie },
+    ),
   adminSetRole: (userId: string, role: "staff" | "student") =>
     request<User>(`/admin/users/${userId}`, { method: "PATCH", body: { role } }),
   adminSetFeatured: (projectIds: string[]) =>

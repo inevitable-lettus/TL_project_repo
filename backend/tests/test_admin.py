@@ -117,3 +117,24 @@ def test_slider_pin_toggle(db, staff, student):
     assert client.patch(
         f"/admin/projects/{public.id}/slider", json={"pinned": False}
     ).json() == {"pinned": False}
+
+
+def test_moderation_list_includes_private_and_searches(db, staff, student):
+    client, _ = staff
+    student_client, kid = student
+    make_project(db, kid["id"], is_public=True, title="Public Gizmo")
+    make_project(db, kid["id"], is_public=False, title="Hidden Gizmo")
+
+    page = client.get("/admin/projects").json()
+    titles = {p["title"] for p in page["items"]}
+    assert {"Public Gizmo", "Hidden Gizmo"} <= titles
+    assert page["total"] >= 2
+
+    by_owner = client.get("/admin/projects", params={"q": "Kid"}).json()
+    assert {p["title"] for p in by_owner["items"]} == {
+        "Public Gizmo",
+        "Hidden Gizmo",
+    }
+
+    assert student_client.get("/admin/projects").status_code == 403
+    assert make_client().get("/admin/projects").status_code == 401
