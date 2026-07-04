@@ -164,6 +164,9 @@ def make_settings(**overrides) -> Settings:
     values = {
         "_env_file": None,
         "environment": "production",
+        # Pin: the container env sets AUTH_TEST_MODE=1 for Playwright, and
+        # BaseSettings would read it here and trip the wrong validator.
+        "auth_test_mode": False,
         "database_url": "postgresql+psycopg://x:x@db/x",
         "minio_access_key": "x",
         "minio_secret_key": "x",

@@ -87,8 +87,8 @@ export const api = {
     request<UploadSlot>("/users/me/avatar", { method: "POST", body }),
   confirmUpload: (fileId: string) =>
     request<UploadSlot["file"]>(`/files/${fileId}/confirm`, { method: "POST" }),
-  downloadUrl: (fileId: string) =>
-    request<DownloadUrl>(`/files/${fileId}/download-url`),
+  downloadUrl: (fileId: string, cookie?: string) =>
+    request<DownloadUrl>(`/files/${fileId}/download-url`, { cookie }),
   mediaUrls: (projectId: string, fileIds: string[], cookie?: string) =>
     request<{ urls: Record<string, string> }>(`/projects/${projectId}/media-urls`, {
       method: "POST",
@@ -111,6 +111,20 @@ export const api = {
       body: { pinned },
     }),
 };
+
+// Resolve cover images for a list of projects: file id → fresh presigned URL.
+// Presigning is cheap (local HMAC in the backend), so parallel per-cover calls
+// are fine at this scale.
+export async function coverUrlMap(
+  projects: { cover_file_id: string | null }[],
+  cookie?: string,
+): Promise<Record<string, string>> {
+  const ids = [...new Set(projects.flatMap((p) => p.cover_file_id ?? []))];
+  const entries = await Promise.all(
+    ids.map(async (id) => [id, (await api.downloadUrl(id, cookie)).url] as const),
+  );
+  return Object.fromEntries(entries);
+}
 
 // Direct-to-MinIO upload (the presigned POST form). Bytes never touch the
 // backend. Returns when MinIO has accepted the object.

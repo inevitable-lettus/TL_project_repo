@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     minio_secret_key: str
     minio_secure: bool = False
     minio_bucket: str = "tinkerer-lab"
+    # Host the *browser* reaches MinIO through (nginx S3 route). Presigned
+    # URLs are signed for this host. Empty = fall back to minio_endpoint.
+    minio_public_endpoint: str = ""
+    minio_public_secure: bool = False
 
     # Placeholder default (2 GB). Real per-deploy value comes from the env.
     max_file_size: int = 2 * 1024**3

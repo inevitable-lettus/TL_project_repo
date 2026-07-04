@@ -108,6 +108,37 @@ export function Button({
   );
 }
 
+type BadgeVariant = "brand" | "neutral" | "gray" | "danger" | "success" | "warning";
+
+const badgeVariants: Record<BadgeVariant, string> = {
+  brand: "border-border-brand-subtle bg-brand-softer text-fg-brand-strong",
+  neutral: "border-border-default bg-neutral-primary-soft text-heading",
+  gray: "border-border-default bg-neutral-secondary-medium text-heading",
+  danger: "border-border-danger-subtle bg-danger-soft text-fg-danger-strong",
+  success: "border-border-success-subtle bg-success-soft text-fg-success-strong",
+  warning: "border-border-warning-subtle bg-warning-soft text-fg-warning",
+};
+
+export function Badge({
+  variant = "neutral",
+  mono = false,
+  children,
+}: {
+  variant?: BadgeVariant;
+  mono?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-base border px-1.5 py-0.5 text-[12px] font-medium ${
+        mono ? "font-mono uppercase tracking-[0.4px]" : ""
+      } ${badgeVariants[variant]}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 // Mono "system label" (typography.md): file names, timestamps, tags.
 export function SysLabel({
   className = "",

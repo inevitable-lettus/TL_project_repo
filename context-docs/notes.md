@@ -352,6 +352,31 @@ surfaces in light mode and a CRT-at-night espresso in dark mode.
   re-styling from scratch.
 - Verified in light and dark mode; all checks and smoke tests green.
 
+### Phase 5 — public pages (2026-07-04)
+Visitors can now actually browse the site:
+
+- **Landing page**: a slideshow of pinned/public projects (crossfades every
+  5 s, pauses when your mouse is over it, swipeable on phones) above the
+  staff-curated featured grid.
+- **Browse page** (`/projects`): a paginated grid of every public project,
+  cover images included.
+- **Project page**: the blog-style write-up. The server turns the stored
+  TipTap document into HTML, mints *one* batch of short-lived image/video
+  URLs per page view, and shows a `DOWNLOADS.DIR` window for attachments —
+  clicking Download asks the backend for a *fresh* link each time, so links
+  in old tabs never go stale. Private projects show a "private" badge to
+  their owner and a plain 404 to everyone else.
+- **Profile page** (`/users/{id}`): a student's bio plus their projects —
+  strangers see only public ones; the owner (and staff) also see private.
+- **Browser → MinIO route**: nginx now forwards `/tinkerer-lab/...` straight
+  to MinIO, so presigned upload/download URLs work from a real browser. The
+  backend signs those URLs for the *public* hostname (new
+  `MINIO_PUBLIC_ENDPOINT` env var) while still talking to MinIO internally.
+- **Tests**: 11 Playwright journeys (visibility rules, a real
+  upload→download round-trip, slider auto-advance) plus 53 backend tests,
+  all green.
+
 ### What's next
-**Phase 5 — public pages**: the landing slider + featured grid, the browse
-grid, the blog-style project page, and student profiles.
+**Phase 6 — authoring**: the My-projects dashboard, the TipTap editor with
+inline photo/video embeds and upload progress, the attachments manager,
+cover picker, and profile editing with avatar upload.

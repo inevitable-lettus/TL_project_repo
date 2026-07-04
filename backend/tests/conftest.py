@@ -15,6 +15,9 @@ settings.jwt_secret = "test-secret-0123456789abcdef0123456789abcdef"
 settings.google_hosted_domain = "uni.edu"
 settings.staff_emails = "staff@uni.edu"
 settings.minio_bucket = "test-bucket"
+# Tests do the upload/download round-trip from inside the container, so
+# presigned URLs must target the internal endpoint, not the nginx route.
+settings.minio_public_endpoint = ""
 
 from backend.app import auth, storage  # noqa: E402
 from backend.app.db import Base, get_db  # noqa: E402

@@ -19,6 +19,7 @@
   --disabled: #e5d4c5;
 
   --brand: #ff631a;
+  --brand-softer: #fff1eb;
   --brand-soft: #ffd2b8;
   --brand-strong: #d94a00;
   --success-soft: #e2f4db;
@@ -40,8 +41,11 @@
   --body: #4a3826;
   --body-subtle: #6c5945;
   --fg-brand: #9d3200;
+  --fg-brand-strong: #7a2200;
   --fg-danger: #7a2200;
+  --fg-danger-strong: #5a1800;
   --fg-success: #2f6c2d;
+  --fg-success-strong: #1f4f1d;
   --fg-warning: #8a4a08;
   --fg-disabled: #a8917c;
 
@@ -50,9 +54,13 @@
   --border-default-strong: #3f1400;
   --border-muted: #eadac9;
   --border-brand: #ff631a;
+  --border-brand-subtle: #ffd2b8;
   --border-danger: #b0300a;
+  --border-danger-subtle: #f6ddd2;
   --border-success: #2f6c2d;
+  --border-success-subtle: #cdeac4;
   --border-warning: #c2410c;
+  --border-warning-subtle: #fbe3c0;
 
   --shadow-window:
     0 4px 10px rgba(56, 28, 0, 0.18), 0 20px 38px rgba(56, 28, 0, 0.28);
@@ -77,6 +85,7 @@
     --disabled: #30231b;
 
     --brand: #ff9a63;
+    --brand-softer: #2e1c12;
     --brand-soft: #3c2519;
     --brand-strong: #ffb07e;
     --success-soft: #182a14;
@@ -96,8 +105,11 @@
     --body: #e4d3c0;
     --body-subtle: #c3ab97;
     --fg-brand: #ff9a63;
+    --fg-brand-strong: #ffb07e;
     --fg-danger: #ff8f7e;
+    --fg-danger-strong: #ffb0a3;
     --fg-success: #79ca8e;
+    --fg-success-strong: #98e2a8;
     --fg-warning: #f0c58a;
     --fg-disabled: #7f6b59;
 
@@ -106,9 +118,13 @@
     --border-default-strong: #a8876f;
     --border-muted: #2a1e15;
     --border-brand: #ff9a63;
+    --border-brand-subtle: #4a3120;
     --border-danger: #ff8f7e;
+    --border-danger-subtle: #4a1a12;
     --border-success: #6fbf6a;
+    --border-success-subtle: #20361c;
     --border-warning: #e5a85a;
+    --border-warning-subtle: #46341a;
 
     --shadow-window:
       0 4px 10px rgba(0, 0, 0, 0.46), 0 20px 38px rgba(0, 0, 0, 0.62);
@@ -134,6 +150,7 @@
   --color-code-text: var(--code-text);
   --color-disabled: var(--disabled);
   --color-brand: var(--brand);
+  --color-brand-softer: var(--brand-softer);
   --color-brand-soft: var(--brand-soft);
   --color-brand-strong: var(--brand-strong);
   --color-success-soft: var(--success-soft);
@@ -151,8 +168,11 @@
   --color-body: var(--body);
   --color-body-subtle: var(--body-subtle);
   --color-fg-brand: var(--fg-brand);
+  --color-fg-brand-strong: var(--fg-brand-strong);
   --color-fg-danger: var(--fg-danger);
+  --color-fg-danger-strong: var(--fg-danger-strong);
   --color-fg-success: var(--fg-success);
+  --color-fg-success-strong: var(--fg-success-strong);
   --color-fg-warning: var(--fg-warning);
   --color-fg-disabled: var(--fg-disabled);
   --color-border-default: var(--border-default);
@@ -160,9 +180,13 @@
   --color-border-default-strong: var(--border-default-strong);
   --color-border-muted: var(--border-muted);
   --color-border-brand: var(--border-brand);
+  --color-border-brand-subtle: var(--border-brand-subtle);
   --color-border-danger: var(--border-danger);
+  --color-border-danger-subtle: var(--border-danger-subtle);
   --color-border-success: var(--border-success);
+  --color-border-success-subtle: var(--border-success-subtle);
   --color-border-warning: var(--border-warning);
+  --color-border-warning-subtle: var(--border-warning-subtle);
 
   --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
   --font-sans: var(--font-dm-sans), system-ui, sans-serif;

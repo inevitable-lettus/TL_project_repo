@@ -1,0 +1,108 @@
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
+import { ProjectCard } from "@/components/project-card";
+import { Badge, SysLabel, Window } from "@/components/ui";
+import { api, ApiError, coverUrlMap } from "@/lib/api";
+import type { Profile } from "@/lib/types";
+
+async function fetchProfile(id: string): Promise<{
+  profile: Profile;
+  cookie: string;
+}> {
+  const cookie = (await cookies()).toString();
+  try {
+    return { profile: await api.profile(id, cookie), cookie };
+  } catch (error) {
+    if (error instanceof ApiError && [404, 422].includes(error.status)) {
+      notFound();
+    }
+    throw error;
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { profile } = await fetchProfile((await params).id);
+  return { title: `${profile.name} — Tinkerer Lab` };
+}
+
+export default async function ProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { profile, cookie } = await fetchProfile((await params).id);
+  const [covers, avatarUrl] = await Promise.all([
+    coverUrlMap(profile.projects, cookie),
+    profile.avatar_file_id
+      ? api.downloadUrl(profile.avatar_file_id, cookie).then((r) => r.url)
+      : Promise.resolve(undefined),
+  ]);
+
+  return (
+    <div className="flex flex-col gap-8">
+      <Window title="PROFILE.CARD" floating>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          {avatarUrl ? (
+            // Presigned URL — must not go through the Next image optimizer.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt={profile.name}
+              className="size-24 shrink-0 rounded-base border border-border-default object-cover"
+            />
+          ) : (
+            <div className="grid size-24 shrink-0 place-items-center rounded-base border border-border-default bg-neutral-secondary-soft font-serif text-3xl text-heading">
+              {profile.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-[30px] md:text-[38px]">{profile.name}</h1>
+              {profile.role === "staff" && (
+                <Badge variant="brand" mono>
+                  staff
+                </Badge>
+              )}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+              {profile.program && <SysLabel>{profile.program}</SysLabel>}
+              {profile.enrollment_year && (
+                <SysLabel>CLASS_OF_{profile.enrollment_year}</SysLabel>
+              )}
+            </div>
+            {profile.bio && (
+              <p className="mt-4 max-w-[65ch] text-[15px] leading-[1.65]">
+                {profile.bio}
+              </p>
+            )}
+          </div>
+        </div>
+      </Window>
+
+      <Window title="PROJECTS.DIR">
+        {profile.projects.length > 0 ? (
+          <div
+            data-testid="profile-projects"
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {profile.projects.map((p) => (
+              <ProjectCard
+                key={p.id}
+                project={p}
+                coverUrl={p.cover_file_id ? covers[p.cover_file_id] : undefined}
+                showVisibility={!p.is_public}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-[15px] leading-[1.65]">No projects yet.</p>
+        )}
+      </Window>
+    </div>
+  );
+}
