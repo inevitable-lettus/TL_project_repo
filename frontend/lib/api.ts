@@ -87,6 +87,8 @@ export const api = {
     request<UploadSlot>("/users/me/avatar", { method: "POST", body }),
   confirmUpload: (fileId: string) =>
     request<UploadSlot["file"]>(`/files/${fileId}/confirm`, { method: "POST" }),
+  deleteFile: (fileId: string) =>
+    request<{ status: string }>(`/files/${fileId}`, { method: "DELETE" }),
   downloadUrl: (fileId: string, cookie?: string) =>
     request<DownloadUrl>(`/files/${fileId}/download-url`, { cookie }),
   mediaUrls: (projectId: string, fileIds: string[], cookie?: string) =>

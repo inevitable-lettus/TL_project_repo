@@ -264,3 +264,62 @@ h3 {
   outline: 2px solid var(--border-brand);
   outline-offset: 2px;
 }
+
+/* TipTap editor body: contenteditable can't carry per-node classes, so
+   mirror tiptap-render.tsx's typography here. */
+.editor-prose p {
+  margin: 12px 0;
+}
+.editor-prose h2,
+.editor-prose h3 {
+  margin: 32px 0 12px;
+}
+.editor-prose ul,
+.editor-prose ol {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+.editor-prose ul {
+  list-style: disc;
+}
+.editor-prose ol {
+  list-style: decimal;
+}
+.editor-prose li + li {
+  margin-top: 8px;
+}
+.editor-prose blockquote {
+  margin: 16px 0;
+  border-left: 2px solid var(--border-default);
+  padding-left: 16px;
+  font-style: italic;
+  color: var(--body-subtle);
+}
+.editor-prose pre {
+  margin: 16px 0;
+  overflow-x: auto;
+  border: 1px solid var(--border-default);
+  border-radius: 3px;
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 16px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+}
+.editor-prose code:not(pre code) {
+  border-radius: 2px;
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 2px 4px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+}
+.editor-prose hr {
+  margin: 32px 0;
+  border-color: var(--border-default-subtle);
+}
+.editor-prose a {
+  color: var(--fg-brand);
+  font-weight: 500;
+  text-decoration: underline;
+}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Downloads } from "@/components/downloads";
 import { collectMediaFileIds, TipTapRender } from "@/components/tiptap-render";
-import { Badge, SysLabel, Window } from "@/components/ui";
+import { Badge, buttonClass, SysLabel, Window } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import type { ProjectDetail } from "@/lib/types";
@@ -39,6 +39,13 @@ export default async function ProjectPage({
   params: Promise<{ id: string }>;
 }) {
   const { project, cookie } = await fetchProject((await params).id);
+  const viewer = await api.me(cookie).catch((error: unknown) => {
+    if (error instanceof ApiError && error.status === 401) return null;
+    throw error;
+  });
+  const canEdit =
+    viewer !== null &&
+    (viewer.id === project.owner_id || viewer.role === "staff");
 
   // One batch mint per render: every inline photo/video URL in a single call.
   const mediaIds = project.content ? collectMediaFileIds(project.content) : [];
@@ -53,7 +60,21 @@ export default async function ProjectPage({
 
   return (
     <div className="mx-auto flex max-w-[760px] flex-col gap-8">
-      <Window title={`${project.title}.TXT`} floating>
+      <Window
+        title={`${project.title}.TXT`}
+        floating
+        titleBarExtra={
+          canEdit ? (
+            <Link
+              href={`/dashboard/${project.id}`}
+              className={buttonClass("tertiary")}
+              data-testid="edit-project"
+            >
+              Edit
+            </Link>
+          ) : undefined
+        }
+      >
         <article data-testid="project-article">
           <header className="mb-6 border-b border-border-default-subtle pb-5">
             <div className="flex items-start justify-between gap-3">

@@ -376,7 +376,35 @@ Visitors can now actually browse the site:
   upload→download round-trip, slider auto-advance) plus 53 backend tests,
   all green.
 
+### Phase 6 — authoring (2026-07-04)
+Students can now write their project pages themselves:
+
+- **My-projects dashboard** (`/dashboard`): create a project (dropped straight
+  into the editor), flip it public/private with one click (takes effect
+  immediately), or delete it (with a confirm — deletion also removes every
+  stored file first, so no storage leaks).
+- **The editor**: a visual write-up editor (TipTap — the same rich-text
+  toolkit Substack-style editors use). Toolbar for headings, bold/italic/etc.,
+  lists, quotes, code, links. Clicking **+IMG/VID** uploads a photo or video
+  straight to storage with a progress bar (uploading → processing → done)
+  and drops it into the text. Save stores the document; the server re-checks
+  everything against the same whitelist as before.
+- **Cover picker**: any image embedded in the write-up can be set as the
+  project's card/slider image — including one embedded seconds ago.
+- **Attachments manager**: add/remove the downloadable files (CAD, archives).
+  Removing a file that's still embedded in the write-up is refused with a
+  clear message — otherwise the page would show a broken image. This needed
+  one new backend endpoint (`DELETE /files/{id}`), which deletes the stored
+  object *before* the database row (same leak-proof order as everywhere).
+- **Profile editing** (`/settings`): name, program, enrollment year, bio, and
+  an avatar upload with live preview. "Edit profile" / "Edit" buttons appear
+  on your own profile and project pages.
+- **Oversize handling**: too-big files show the plain "exceeds limit" message
+  at all three enforcement points. The local dev `.env` uses a 10 MB limit so
+  the robot-browser test can actually try an oversized file (production keeps
+  2 GB).
+- **Tests**: 4 new Playwright journeys (15 total) + 56 backend tests, green.
+
 ### What's next
-**Phase 6 — authoring**: the My-projects dashboard, the TipTap editor with
-inline photo/video embeds and upload progress, the attachments manager,
-cover picker, and profile editing with avatar upload.
+**Phase 7 — admin dashboard UI**: `/admin` with Curation (feature + reorder,
+slider pins), People (promote/demote), and Moderation tabs.

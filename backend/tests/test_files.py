@@ -207,3 +207,49 @@ def test_purge_project_objects_removes_bytes(db, owner_client):
     purge_project_objects(db.get(Project, project.id))
     with pytest.raises(Exception, match="NoSuchKey"):
         storage.stat_object(row.object_key)
+
+
+def test_delete_file_purges_object_and_row(db, owner_client):
+    client, _, project = owner_client
+    ready = full_upload(client, project.id, b"delete me")
+    key = db.get(File, uuid.UUID(ready["id"])).object_key
+
+    response = client.delete(f"/files/{ready['id']}")
+    assert response.status_code == 200
+    assert db.get(File, uuid.UUID(ready["id"])) is None
+    with pytest.raises(Exception, match="NoSuchKey"):
+        storage.stat_object(key)
+
+
+def test_delete_file_requires_edit_rights(db, owner_client):
+    client, _, project = owner_client
+    ready = full_upload(client, project.id, b"keep me")
+
+    anon = make_client()
+    assert anon.delete(f"/files/{ready['id']}").status_code == 401
+
+    stranger = make_client()
+    login(stranger, "stranger2@uni.edu")
+    assert stranger.delete(f"/files/{ready['id']}").status_code == 404
+
+    assert db.get(File, uuid.UUID(ready["id"])) is not None
+
+
+def test_delete_file_embedded_in_content_rejected(db, owner_client):
+    client, _, project = owner_client
+    ready = full_upload(client, project.id, b"embedded", kind="media")
+    patched = client.patch(
+        f"/projects/{project.id}",
+        json={
+            "content": {
+                "type": "doc",
+                "content": [{"type": "media", "attrs": {"fileId": ready["id"]}}],
+            }
+        },
+    )
+    assert patched.status_code == 200
+
+    response = client.delete(f"/files/{ready['id']}")
+    assert response.status_code == 400
+    assert "write-up" in response.json()["detail"]
+    assert db.get(File, uuid.UUID(ready["id"])) is not None

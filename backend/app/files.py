@@ -191,6 +191,31 @@ def confirm_upload(
     return file
 
 
+@router.delete("/files/{file_id}")
+def delete_file(
+    file_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict[str, str]:
+    from .projects import collect_content_file_ids  # circular at module level
+
+    file = db.get(File, file_id)
+    if file is None:
+        raise HTTPException(status_code=404, detail="File not found")
+    require_file_edit(file, user)
+    if file.project_id is not None:
+        project = db.get(Project, file.project_id)
+        if project.content and file.id in collect_content_file_ids(project.content):
+            raise HTTPException(
+                status_code=400,
+                detail="file is embedded in the write-up; remove it there first",
+            )
+    storage.remove_object(file.object_key)  # object first, then row
+    db.delete(file)
+    db.commit()
+    return {"status": "deleted"}
+
+
 class DownloadUrlOut(BaseModel):
     url: str
     filename: str

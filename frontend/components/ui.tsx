@@ -139,6 +139,36 @@ export function Badge({
   );
 }
 
+// Recessed OS field (inputs.md): full width, inset background, retro focus.
+export const inputClass =
+  "block w-full rounded-base border border-border-default bg-neutral-secondary-soft " +
+  "px-2.5 py-[7px] text-[13px] text-heading placeholder:text-body-subtle " +
+  "transition-colors duration-[120ms] hover:border-border-default-strong " +
+  "focus:border-border-brand focus:outline-none focus-visible:outline-2 " +
+  "disabled:cursor-not-allowed disabled:bg-disabled disabled:text-fg-disabled";
+
+export function Field({
+  id,
+  label,
+  children,
+}: {
+  id: string;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="mb-1.5 block text-[13px] font-medium text-heading"
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 // Mono "system label" (typography.md): file names, timestamps, tags.
 export function SysLabel({
   className = "",

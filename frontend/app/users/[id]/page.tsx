@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectCard } from "@/components/project-card";
-import { Badge, SysLabel, Window } from "@/components/ui";
+import { Badge, buttonClass, SysLabel, Window } from "@/components/ui";
 import { api, ApiError, coverUrlMap } from "@/lib/api";
 import type { Profile } from "@/lib/types";
 
@@ -36,16 +37,34 @@ export default async function ProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { profile, cookie } = await fetchProfile((await params).id);
-  const [covers, avatarUrl] = await Promise.all([
+  const [covers, avatarUrl, viewer] = await Promise.all([
     coverUrlMap(profile.projects, cookie),
     profile.avatar_file_id
       ? api.downloadUrl(profile.avatar_file_id, cookie).then((r) => r.url)
       : Promise.resolve(undefined),
+    api.me(cookie).catch((error: unknown) => {
+      if (error instanceof ApiError && error.status === 401) return null;
+      throw error;
+    }),
   ]);
 
   return (
     <div className="flex flex-col gap-8">
-      <Window title="PROFILE.CARD" floating>
+      <Window
+        title="PROFILE.CARD"
+        floating
+        titleBarExtra={
+          viewer?.id === profile.id ? (
+            <Link
+              href="/settings"
+              className={buttonClass("tertiary")}
+              data-testid="edit-profile"
+            >
+              Edit profile
+            </Link>
+          ) : undefined
+        }
+      >
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           {avatarUrl ? (
             // Presigned URL — must not go through the Next image optimizer.
