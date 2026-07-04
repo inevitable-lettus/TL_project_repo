@@ -39,6 +39,25 @@ services:
       minio:
         condition: service_healthy
 
+  backup:
+    image: postgres:16-alpine
+    env_file: .env
+    entrypoint: ["/bin/sh", "-c"]
+    # Compressed pg_dump on an interval, pruned after BACKUP_KEEP_DAYS.
+    # ./backups is a host bind mount so dumps survive `down -v`.
+    command:
+      - |
+        while true; do
+          PGPASSWORD="$$POSTGRES_PASSWORD" pg_dump -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -F c -f "/backups/tinkerer-$$(date +%Y%m%d-%H%M%S).dump"
+          find /backups -name '*.dump' -mtime "+$${BACKUP_KEEP_DAYS:-14}" -delete
+          sleep "$${BACKUP_INTERVAL_SECONDS:-86400}"
+        done
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
     image: postgres:16-alpine
     environment:

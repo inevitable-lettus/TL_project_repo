@@ -11,3 +11,9 @@ wheels/
 
 # Secrets
 .env
+
+# DB dumps from the backup service
+backups/
+
+# macOS
+.DS_Store

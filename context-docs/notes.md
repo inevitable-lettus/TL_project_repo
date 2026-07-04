@@ -426,7 +426,33 @@ Staff now run the site entirely from the browser — no code, ever:
   the moderation view; everything else reuses APIs from Phase 3.
 - **Tests**: 4 new Playwright journeys (19 total) + 57 backend tests, green.
 
+### Phase 8 — hardening (2026-07-04)
+The operational safety net, plus a real performance fix:
+
+- **nginx no longer needs babysitting**: it used to cache each container's
+  internal address at startup, so recreating the frontend meant restarting
+  nginx too. It now asks Docker's DNS on every request (a standard nginx
+  variable trick), so containers can be rebuilt freely.
+- **Daily database backups**: a small `backup` service runs `pg_dump` into
+  the `./backups/` folder on the host (survives even a full
+  `docker compose down -v`), keeping two weeks of dumps. Verified restorable.
+- **Seed script** (`python -m backend.app.seed`): fills a fresh install with
+  two students and six sample projects — cover images generated from pure
+  Python, write-ups, attachments, featured picks, slider pins — so demos and
+  testing never start from a blank site. Refuses to run twice.
+- **Load test found a real bug**: with 100 simultaneous visitors the old
+  setup collapsed completely (every request timed out — the backend allowed
+  only 15 database connections and one worker process). Now: 4 backend
+  workers, 80-connection budget (Postgres allows 100), and the same 100-visitor
+  storm finishes in ~1.4 s with zero errors.
+- **From-scratch proof**: wipe everything (`down -v`), rebuild, migrate,
+  seed — all 57 backend tests and 19 browser journeys pass.
+- Bucket CORS turned out unnecessary: browser, API, and file storage all
+  share one origin through nginx.
+
 ### What's next
-**Phase 8 — hardening + deploy**: backup service, seed script, full
-from-scratch E2E (`down -v && up && migrate && seed && test`), light load
-sanity, and the public route once IT provides it.
+**Go-live** — blocked on university IT providing the public route. The
+checklist (real Google OAuth credentials, public hostname for file URLs,
+production flags, 2 GB file limit, real staff list) is in handoff.md's
+Phase 8 paragraph. After that: point a browser at the real domain and run
+one upload/download to confirm presigned signatures survive the proxy.
