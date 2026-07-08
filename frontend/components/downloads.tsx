@@ -21,19 +21,26 @@ export function Downloads({ files }: { files: FileInfo[] }) {
     }
   };
 
+  // File-manager manifest: mono filename column, right-aligned size column.
   return (
     <ul className="flex flex-col">
       {files.map((file) => (
         <li
           key={file.id}
-          className="flex items-center gap-3 border-b border-border-default-subtle py-2.5 last:border-b-0"
+          className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-default-subtle py-2.5 last:border-b-0 sm:grid-cols-[1fr_auto_auto] sm:gap-x-5"
         >
-          <span className="min-w-0 flex-1">
+          <span className="min-w-0">
             <span className="block truncate font-mono text-[13px] text-heading">
               {file.filename}
             </span>
-            <SysLabel>
+            <SysLabel className="sm:hidden">
               {file.mime_type} · {formatBytes(file.size)}
+            </SysLabel>
+          </span>
+          <span className="hidden text-right sm:block">
+            <SysLabel>{file.mime_type}</SysLabel>
+            <SysLabel className="block text-heading">
+              {formatBytes(file.size)}
             </SysLabel>
           </span>
           <Button

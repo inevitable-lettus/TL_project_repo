@@ -470,6 +470,15 @@ issue reporting — all with real login instead of typed-in emails.
   orphan cleanup, delete-purges-storage) apply automatically. Setting a new
   thumbnail deletes the old one so replaced copies don't pile up against a
   student's storage quota.
+- **Phase A4**: the public pages got their storytelling pass. The landing now
+  opens with a "README.TXT" window (big serif headline + what-this-is line +
+  two buttons) before the slideshow, and the featured section leads with one
+  big staff-pick card instead of a flat grid. Project pages open on the
+  full-size cover photo like a magazine article; downloads read like a file
+  manager listing. Cards lift slightly on hover, profiles show bigger
+  avatars and chip-style program labels. Everything stays inside the
+  existing "nostalgia" design tokens — no new colors were invented — and
+  animations respect the system "reduce motion" setting.
 - **Phase A3**: when a student picks a cover, their own browser now shrinks
   the image (max 1280px, WebP) and uploads that small copy alongside —
   project cards and the landing slider load the small copy instead of the
