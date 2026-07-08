@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import type { ProjectListItem, User } from "@/lib/types";
+import type { AdminBooking, ProjectListItem, User } from "@/lib/types";
 import { Badge, Button, buttonClass, inputClass, SysLabel, Window } from "@/components/ui";
 
-type Tab = "curation" | "people" | "moderation";
+type Tab = "curation" | "people" | "moderation" | "bookings";
 
 const tabClass = (active: boolean) =>
   "rounded-t-base border-b-2 px-3.5 py-2.5 text-[13px] font-medium transition-colors duration-[120ms] " +
@@ -19,11 +19,13 @@ export function AdminClient({
   initialFeatured,
   initialUsers,
   initialProjects,
+  initialBookings,
 }: {
   me: User;
   initialFeatured: ProjectListItem[];
   initialUsers: User[];
   initialProjects: ProjectListItem[];
+  initialBookings: AdminBooking[];
 }) {
   const [tab, setTab] = useState<Tab>("curation");
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,7 @@ export function AdminClient({
               ["curation", "Curation"],
               ["people", "People"],
               ["moderation", "Moderation"],
+              ["bookings", "Bookings"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -68,6 +71,9 @@ export function AdminClient({
           {tab === "people" && <PeopleTab me={me} initialUsers={initialUsers} run={run} />}
           {tab === "moderation" && (
             <ModerationTab initialProjects={initialProjects} run={run} />
+          )}
+          {tab === "bookings" && (
+            <BookingsTab initialBookings={initialBookings} run={run} />
           )}
           {error && (
             <p role="alert" className="mt-4 font-mono text-[12px] text-fg-danger">
@@ -308,6 +314,100 @@ function PeopleTab({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+const bookingStatusVariant: Record<
+  AdminBooking["status"],
+  "warning" | "success" | "danger" | "gray"
+> = {
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
+  cancelled: "gray",
+};
+
+function BookingsTab({
+  initialBookings,
+  run,
+}: {
+  initialBookings: AdminBooking[];
+  run: (action: () => Promise<void>) => Promise<void>;
+}) {
+  const [bookings, setBookings] = useState(initialBookings);
+  const [filter, setFilter] = useState<"pending" | "">("pending");
+
+  const visible = filter
+    ? bookings.filter((b) => b.status === filter)
+    : bookings;
+
+  const decide = (booking: AdminBooking, status: "approved" | "rejected") =>
+    run(async () => {
+      const updated = await api.adminDecideBooking(booking.id, status);
+      setBookings((current) =>
+        current.map((b) => (b.id === booking.id ? updated : b)),
+      );
+    });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[22px]">Machine bookings</h2>
+        <select
+          aria-label="Filter bookings"
+          className={`${inputClass} w-auto`}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as "pending" | "")}
+        >
+          <option value="pending">Pending only</option>
+          <option value="">All</option>
+        </select>
+      </div>
+      {visible.length > 0 ? (
+        <ul data-testid="bookings-list" className="flex flex-col divide-y divide-border-default-subtle">
+          {visible.map((booking) => (
+            <li key={booking.id} className="flex flex-wrap items-center gap-3 py-2.5">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px] font-medium text-heading">
+                  {booking.machine_slug} — {booking.user_name}
+                </span>
+                <SysLabel>
+                  {booking.date} · {booking.start_time.slice(0, 5)}–
+                  {booking.end_time.slice(0, 5)}
+                </SysLabel>
+                {booking.purpose && (
+                  <span className="block truncate text-[13px] text-body-subtle">
+                    {booking.purpose}
+                  </span>
+                )}
+              </span>
+              <Badge variant={bookingStatusVariant[booking.status]} mono>
+                {booking.status}
+              </Badge>
+              {booking.status === "pending" && (
+                <span className="flex gap-2">
+                  <Button onClick={() => void decide(booking, "approved")}>
+                    Approve
+                  </Button>
+                  <Button variant="tertiary" onClick={() => void decide(booking, "rejected")}>
+                    Reject
+                  </Button>
+                </span>
+              )}
+              {booking.status === "approved" && (
+                <Button variant="tertiary" onClick={() => void decide(booking, "rejected")}>
+                  Reject
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[15px] leading-[1.65] text-body-subtle">
+          {filter ? "No pending bookings." : "No bookings yet."}
+        </p>
+      )}
     </div>
   );
 }

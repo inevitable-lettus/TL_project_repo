@@ -72,6 +72,29 @@ export type Machine = {
   notes: string;
 };
 
+export type Booking = {
+  id: string;
+  machine_slug: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  purpose: string;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  created_at: string;
+};
+
+export type AdminBooking = Booking & { user_name: string; user_email: string };
+
+export type BookingRules = {
+  slot_minutes: number;
+  max_minutes: number;
+  advance_days: number;
+  lab_open: string;
+  lab_close: string;
+};
+
+export type DaySlot = { start_time: string; end_time: string };
+
 export type DownloadUrl = {
   url: string;
   filename: string;

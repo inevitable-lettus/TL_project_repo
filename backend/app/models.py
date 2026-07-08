@@ -1,15 +1,17 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime, time
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Index,
     Integer,
     String,
+    Time,
     func,
     text,
 )
@@ -116,6 +118,35 @@ class Project(Base):
         cascade="all, delete-orphan",
         foreign_keys="File.project_id",
     )
+
+
+class Booking(Base):
+    __tablename__ = "bookings"
+    __table_args__ = (
+        Index("ix_bookings_machine_date", "machine_slug", "date"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    # RESTRICT like Project.owner_id — bookings are usage history.
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    # Slug from the machines sheet; kept verbatim even if the machine is
+    # later removed from the sheet.
+    machine_slug: Mapped[str] = mapped_column(String, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    start_time: Mapped[time] = mapped_column(Time, nullable=False)
+    end_time: Mapped[time] = mapped_column(Time, nullable=False)
+    purpose: Mapped[str] = mapped_column(String, nullable=False)
+    # pending | approved | rejected | cancelled
+    status: Mapped[str] = mapped_column(
+        String, nullable=False, server_default="pending"
+    )
+    created_at: Mapped[datetime] = created_at_col()
+
+    user: Mapped[User] = relationship()
 
 
 class File(Base):

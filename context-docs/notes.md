@@ -470,6 +470,17 @@ issue reporting — all with real login instead of typed-in emails.
   orphan cleanup, delete-purges-storage) apply automatically. Setting a new
   thumbnail deletes the old one so replaced copies don't pile up against a
   student's storage quota.
+- **Phase B6**: machine booking. Students pick a machine, a day (up to 30
+  days ahead), and a start slot on an hour grid — taken slots show up
+  disabled because the browser asks the server which times are busy (times
+  only; no names leak). Requests start as "pending"; staff approve or reject
+  from a new admin tab, and two overlapping requests can never both be
+  approved (the database serializes decisions per machine-day). Everyone
+  sees their own bookings on the dashboard and can cancel. All the rules
+  (hours, slot length, 4-hour cap, booking window) are environment settings,
+  not code. If mail credentials are configured the decision is emailed;
+  without them everything still works. This beats the reference platform's
+  booking because identity comes from real Google login, not a typed email.
 - **Phase B5**: the site now has a public "Machines" page listing lab
   equipment by category with a live status chip (available / in use /
   maintenance / offline) and a training-required marker. The clever bit:

@@ -73,7 +73,7 @@ def staff_only_probe(user=Depends(auth.require_staff)) -> dict[str, str]:
 def clean_tables() -> Iterator[None]:
     yield
     with test_engine.connect() as conn:
-        conn.execute(text("TRUNCATE users, projects, files CASCADE"))
+        conn.execute(text("TRUNCATE users, projects, files, bookings CASCADE"))
         conn.commit()
     for obj in storage.client.list_objects(settings.minio_bucket, recursive=True):
         storage.client.remove_object(settings.minio_bucket, obj.object_name)

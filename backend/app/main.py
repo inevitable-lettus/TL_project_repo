@@ -8,6 +8,7 @@ from sqlalchemy.exc import OperationalError
 
 from .admin import router as admin_router
 from .auth import router as auth_router
+from .bookings import router as bookings_router
 from .db import engine
 from .files import router as files_router
 from .machines import router as machines_router
@@ -42,6 +43,7 @@ app.include_router(projects_router)
 app.include_router(users_router)
 app.include_router(admin_router)
 app.include_router(machines_router)
+app.include_router(bookings_router)
 
 
 @app.get("/health")

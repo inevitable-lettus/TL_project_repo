@@ -1,4 +1,8 @@
 import type {
+  AdminBooking,
+  Booking,
+  BookingRules,
+  DaySlot,
   DownloadUrl,
   Machine,
   Profile,
@@ -76,6 +80,30 @@ export const api = {
     request<{ status: string }>(`/projects/${id}`, { method: "DELETE" }),
 
   machines: () => request<Machine[]>("/machines"),
+
+  bookingRules: () => request<BookingRules>("/bookings/rules"),
+  bookingDay: (machine: string, date: string) =>
+    request<DaySlot[]>(
+      `/bookings/day?machine=${encodeURIComponent(machine)}&date=${date}`,
+    ),
+  createBooking: (body: {
+    machine_slug: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    purpose: string;
+  }) => request<Booking>("/bookings", { method: "POST", body }),
+  myBookings: (cookie?: string) =>
+    request<Booking[]>("/bookings/mine", { cookie }),
+  cancelBooking: (id: string) =>
+    request<Booking>(`/bookings/${id}/cancel`, { method: "POST" }),
+  adminBookings: (status = "", cookie?: string) =>
+    request<AdminBooking[]>(`/admin/bookings?status=${status}`, { cookie }),
+  adminDecideBooking: (id: string, status: "approved" | "rejected") =>
+    request<AdminBooking>(`/admin/bookings/${id}`, {
+      method: "PATCH",
+      body: { status },
+    }),
 
   profile: (id: string, cookie?: string) =>
     request<Profile>(`/users/${id}`, { cookie }),

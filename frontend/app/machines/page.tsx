@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Badge, SysLabel, Window } from "@/components/ui";
+import Link from "next/link";
+import { Badge, buttonClass, SysLabel, Window } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import type { Machine } from "@/lib/types";
 
@@ -85,9 +86,21 @@ export default async function MachinesPage() {
                           </span>
                         )}
                       </span>
-                      <Badge variant={statusBadge[machine.status].variant} mono>
-                        {statusBadge[machine.status].label}
-                      </Badge>
+                      <span className="flex items-center gap-2">
+                        <Badge variant={statusBadge[machine.status].variant} mono>
+                          {statusBadge[machine.status].label}
+                        </Badge>
+                        {(machine.status === "available" ||
+                          machine.status === "in_use") && (
+                          <Link
+                            href={`/machines/${machine.slug}/book`}
+                            className={buttonClass("tertiary")}
+                            data-testid={`book-${machine.slug}`}
+                          >
+                            Book
+                          </Link>
+                        )}
+                      </span>
                     </li>
                   ))}
                 </ul>
