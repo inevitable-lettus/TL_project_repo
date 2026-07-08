@@ -95,6 +95,38 @@ export type BookingRules = {
 
 export type DaySlot = { start_time: string; end_time: string };
 
+export type Checkout = {
+  id: string;
+  category: string;
+  tool_name: string;
+  quantity: number;
+  due_date: string;
+  status: "out" | "returned";
+  returned_at: string | null;
+  created_at: string;
+};
+
+export type AdminCheckout = Checkout & {
+  user_name: string;
+  user_email: string;
+  overdue: boolean;
+};
+
+export type Issue = {
+  id: string;
+  machine_slug: string | null;
+  type: "equipment" | "safety" | "other";
+  severity: "low" | "medium" | "high" | "urgent";
+  description: string;
+  status: "open" | "resolved";
+  created_at: string;
+};
+
+export type AdminIssue = Issue & {
+  reporter_name: string;
+  reporter_email: string;
+};
+
 export type DownloadUrl = {
   url: string;
   filename: string;

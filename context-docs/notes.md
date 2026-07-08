@@ -470,6 +470,12 @@ issue reporting — all with real login instead of typed-in emails.
   orphan cleanup, delete-purges-storage) apply automatically. Setting a new
   thumbnail deletes the old one so replaced copies don't pile up against a
   student's storage quota.
+- **Phase B7**: tool checkout and issue reporting. A "Tools" page logs what
+  leaves the lab (tool, quantity, return-by date) and lets you mark it
+  returned; staff see everything still out with overdue items flagged red.
+  A "Report an issue" form (linked from the machines page) files equipment
+  or safety reports with a severity; staff triage and resolve them from the
+  admin dashboard, and urgent reports email all staff if mail is configured.
 - **Phase B6**: machine booking. Students pick a machine, a day (up to 30
   days ahead), and a start slot on an hour grid — taken slots show up
   disabled because the browser asks the server which times are busy (times

@@ -40,7 +40,12 @@ export default async function MachinesPage() {
     <div className="flex flex-col gap-8">
       <Window title="MACHINES.DIR" floating>
         <div className="mb-6 border-b border-border-default-subtle pb-5">
-          <h1 className="text-[26px] md:text-[32px]">The machines</h1>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <h1 className="text-[26px] md:text-[32px]">The machines</h1>
+            <Link href="/report" className={buttonClass("tertiary")}>
+              Report an issue
+            </Link>
+          </div>
           <p className="mt-2 max-w-[60ch] text-[15px] leading-[1.65] text-body-subtle">
             What&apos;s on the lab floor and whether it&apos;s free right now.
             Status is kept current by lab staff.

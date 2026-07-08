@@ -1,6 +1,10 @@
 import type {
   AdminBooking,
+  AdminCheckout,
+  AdminIssue,
   Booking,
+  Checkout,
+  Issue,
   BookingRules,
   DaySlot,
   DownloadUrl,
@@ -101,6 +105,34 @@ export const api = {
     request<AdminBooking[]>(`/admin/bookings?status=${status}`, { cookie }),
   adminDecideBooking: (id: string, status: "approved" | "rejected") =>
     request<AdminBooking>(`/admin/bookings/${id}`, {
+      method: "PATCH",
+      body: { status },
+    }),
+
+  toolCategories: () => request<string[]>("/checkouts/categories"),
+  createCheckout: (body: {
+    category: string;
+    tool_name: string;
+    quantity: number;
+    due_date: string;
+  }) => request<Checkout>("/checkouts", { method: "POST", body }),
+  myCheckouts: (cookie?: string) =>
+    request<Checkout[]>("/checkouts/mine", { cookie }),
+  returnCheckout: (id: string) =>
+    request<Checkout>(`/checkouts/${id}/return`, { method: "POST" }),
+  adminCheckouts: (status = "out", cookie?: string) =>
+    request<AdminCheckout[]>(`/admin/checkouts?status=${status}`, { cookie }),
+
+  createIssue: (body: {
+    machine_slug: string | null;
+    type: Issue["type"];
+    severity: Issue["severity"];
+    description: string;
+  }) => request<Issue>("/issues", { method: "POST", body }),
+  adminIssues: (status = "open", cookie?: string) =>
+    request<AdminIssue[]>(`/admin/issues?status=${status}`, { cookie }),
+  adminSetIssueStatus: (id: string, status: "open" | "resolved") =>
+    request<AdminIssue>(`/admin/issues/${id}`, {
       method: "PATCH",
       body: { status },
     }),

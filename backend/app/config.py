@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     lab_open: str = "09:00"
     lab_close: str = "18:00"
 
+    # Tool checkout categories (comma-separated; parity with the lab's list).
+    tool_categories: str = (
+        "Hand Tools,Handheld Power Tools,Measurement Tools,Safety Equipment,Other"
+    )
+
     # Outbound mail (booking decisions, urgent issues). Empty host = emails
     # are skipped by design; every flow works without them.
     smtp_host: str = ""
@@ -60,6 +65,10 @@ class Settings(BaseSettings):
     staff_emails: str = ""
     # Enables the Playwright login endpoint. Only legal when environment=test.
     auth_test_mode: bool = False
+
+    @property
+    def tool_category_list(self) -> list[str]:
+        return [c.strip() for c in self.tool_categories.split(",") if c.strip()]
 
     @property
     def staff_email_set(self) -> set[str]:

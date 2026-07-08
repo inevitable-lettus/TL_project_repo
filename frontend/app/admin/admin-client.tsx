@@ -3,10 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import type { AdminBooking, ProjectListItem, User } from "@/lib/types";
+import type {
+  AdminBooking,
+  AdminCheckout,
+  AdminIssue,
+  ProjectListItem,
+  User,
+} from "@/lib/types";
 import { Badge, Button, buttonClass, inputClass, SysLabel, Window } from "@/components/ui";
 
-type Tab = "curation" | "people" | "moderation" | "bookings";
+type Tab = "curation" | "people" | "moderation" | "bookings" | "checkouts" | "issues";
 
 const tabClass = (active: boolean) =>
   "rounded-t-base border-b-2 px-3.5 py-2.5 text-[13px] font-medium transition-colors duration-[120ms] " +
@@ -20,12 +26,16 @@ export function AdminClient({
   initialUsers,
   initialProjects,
   initialBookings,
+  initialCheckouts,
+  initialIssues,
 }: {
   me: User;
   initialFeatured: ProjectListItem[];
   initialUsers: User[];
   initialProjects: ProjectListItem[];
   initialBookings: AdminBooking[];
+  initialCheckouts: AdminCheckout[];
+  initialIssues: AdminIssue[];
 }) {
   const [tab, setTab] = useState<Tab>("curation");
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +59,8 @@ export function AdminClient({
               ["people", "People"],
               ["moderation", "Moderation"],
               ["bookings", "Bookings"],
+              ["checkouts", "Checkouts"],
+              ["issues", "Issues"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -74,6 +86,12 @@ export function AdminClient({
           )}
           {tab === "bookings" && (
             <BookingsTab initialBookings={initialBookings} run={run} />
+          )}
+          {tab === "checkouts" && (
+            <CheckoutsTab initialCheckouts={initialCheckouts} run={run} />
+          )}
+          {tab === "issues" && (
+            <IssuesTab initialIssues={initialIssues} run={run} />
           )}
           {error && (
             <p role="alert" className="mt-4 font-mono text-[12px] text-fg-danger">
@@ -406,6 +424,114 @@ function BookingsTab({
       ) : (
         <p className="text-[15px] leading-[1.65] text-body-subtle">
           {filter ? "No pending bookings." : "No bookings yet."}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function CheckoutsTab({
+  initialCheckouts,
+  run,
+}: {
+  initialCheckouts: AdminCheckout[];
+  run: (action: () => Promise<void>) => Promise<void>;
+}) {
+  const [checkouts, setCheckouts] = useState(initialCheckouts);
+
+  const markReturned = (checkout: AdminCheckout) =>
+    run(async () => {
+      await api.returnCheckout(checkout.id);
+      setCheckouts((current) => current.filter((c) => c.id !== checkout.id));
+    });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h2 className="text-[22px]">Tools out</h2>
+      {checkouts.length > 0 ? (
+        <ul data-testid="checkouts-list" className="flex flex-col divide-y divide-border-default-subtle">
+          {checkouts.map((checkout) => (
+            <li key={checkout.id} className="flex flex-wrap items-center gap-3 py-2.5">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px] font-medium text-heading">
+                  {checkout.tool_name}
+                  {checkout.quantity > 1 && ` ×${checkout.quantity}`} —{" "}
+                  {checkout.user_name}
+                </span>
+                <SysLabel>
+                  {checkout.category} · due {checkout.due_date}
+                </SysLabel>
+              </span>
+              {checkout.overdue && (
+                <Badge variant="danger" mono>
+                  overdue
+                </Badge>
+              )}
+              <Button variant="tertiary" onClick={() => void markReturned(checkout)}>
+                Mark returned
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[15px] leading-[1.65] text-body-subtle">
+          Nothing is checked out.
+        </p>
+      )}
+    </div>
+  );
+}
+
+const severityVariant: Record<AdminIssue["severity"], "gray" | "neutral" | "warning" | "danger"> = {
+  low: "gray",
+  medium: "neutral",
+  high: "warning",
+  urgent: "danger",
+};
+
+function IssuesTab({
+  initialIssues,
+  run,
+}: {
+  initialIssues: AdminIssue[];
+  run: (action: () => Promise<void>) => Promise<void>;
+}) {
+  const [issues, setIssues] = useState(initialIssues);
+
+  const resolve = (issue: AdminIssue) =>
+    run(async () => {
+      await api.adminSetIssueStatus(issue.id, "resolved");
+      setIssues((current) => current.filter((i) => i.id !== issue.id));
+    });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h2 className="text-[22px]">Open issues</h2>
+      {issues.length > 0 ? (
+        <ul data-testid="issues-list" className="flex flex-col divide-y divide-border-default-subtle">
+          {issues.map((issue) => (
+            <li key={issue.id} className="flex flex-wrap items-center gap-3 py-2.5">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-medium text-heading">
+                  {issue.machine_slug ?? issue.type} — {issue.reporter_name}
+                </span>
+                <span className="block text-[13px] leading-[1.5] text-body">
+                  {issue.description}
+                </span>
+                <SysLabel>{issue.type}</SysLabel>
+              </span>
+              <Badge variant={severityVariant[issue.severity]} mono>
+                {issue.severity}
+              </Badge>
+              <Button variant="tertiary" onClick={() => void resolve(issue)}>
+                Resolve
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[15px] leading-[1.65] text-body-subtle">
+          No open issues.
         </p>
       )}
     </div>
