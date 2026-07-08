@@ -470,6 +470,14 @@ issue reporting — all with real login instead of typed-in emails.
   orphan cleanup, delete-purges-storage) apply automatically. Setting a new
   thumbnail deletes the old one so replaced copies don't pile up against a
   student's storage quota.
+- **Phase B8 (wrap)**: the demo seed now also creates sample bookings, tool
+  checkouts (one deliberately overdue), an open issue, and small thumbnail
+  copies of covers. The README was rewritten for the Docker-based setup.
+  GitHub Actions CI now boots the whole stack and runs every backend test
+  and browser journey on each push/PR — before this, tests only ran when
+  someone remembered to run them. Verified from absolute zero: wipe all
+  data, rebuild, migrate, seed — 76 backend tests + 24 browser journeys
+  pass.
 - **Phase B7**: tool checkout and issue reporting. A "Tools" page logs what
   leaves the lab (tool, quantity, return-by date) and lets you mark it
   returned; staff see everything still out with overdue items flagged red.

@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure test env
+        run: |
+          cp .env.example .env
+          {
+            echo "ENVIRONMENT=test"
+            echo "AUTH_TEST_MODE=1"
+            echo "STAFF_EMAILS=staff@uni.edu"
+            echo "MAX_FILE_SIZE=10485760"
+          } >> .env
+
+      - name: Boot stack
+        run: |
+          docker compose up -d --build
+          docker compose exec -T backend alembic -c backend/alembic.ini upgrade head
+
+      - name: Backend tests
+        run: docker compose exec -T backend pytest -q
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Frontend typecheck and lint
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run typecheck
+          npm run lint
+
+      - name: Playwright e2e
+        working-directory: frontend
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose logs --tail=150

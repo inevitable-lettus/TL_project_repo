@@ -9,10 +9,11 @@ import struct
 import sys
 import uuid
 import zlib
+from datetime import date, time, timedelta
 
 from . import storage
 from .db import SessionLocal
-from .models import File, Project, User
+from .models import Booking, Checkout, File, Issue, Project, User
 
 STAFF_EMAIL = "staff@uni.edu"
 
@@ -139,6 +140,14 @@ def main() -> None:
             "image/png",
             "media",
         )
+        thumb = add_file(
+            db,
+            project,
+            "cover-thumb.png",
+            make_png(PALETTE[index % len(PALETTE)], width=320, height=180),
+            "image/png",
+            "thumb",
+        )
         add_file(
             db,
             project,
@@ -148,12 +157,59 @@ def main() -> None:
             "attachment",
         )
         project.cover_file_id = cover.id
+        project.cover_thumb_file_id = thumb.id
         project.content = doc(description, cover.id)
         if is_public:
             if index < 3:
                 project.featured_rank = index
             if index < 2:
                 project.slider_pinned = True
+
+    # Lab ops samples: bookings, checkouts (one overdue), issues. Machine
+    # slugs match frontend/public/machines-demo.csv.
+    tomorrow = date.today() + timedelta(days=1)
+    db.add_all(
+        [
+            Booking(
+                user_id=students[0].id,
+                machine_slug="laser-cutter",
+                date=tomorrow,
+                start_time=time(10, 0),
+                end_time=time(12, 0),
+                purpose="acrylic case for the pen plotter",
+            ),
+            Booking(
+                user_id=students[1].id,
+                machine_slug="bambu-x1c",
+                date=tomorrow + timedelta(days=1),
+                start_time=time(14, 0),
+                end_time=time(16, 0),
+                purpose="lamp shade reprint",
+                status="approved",
+            ),
+            Checkout(
+                user_id=students[0].id,
+                category="Hand Tools",
+                tool_name="Torque wrench",
+                quantity=1,
+                due_date=tomorrow + timedelta(days=6),
+            ),
+            Checkout(
+                user_id=students[1].id,
+                category="Measurement Tools",
+                tool_name="Dial calipers",
+                quantity=2,
+                due_date=date.today() - timedelta(days=2),  # overdue demo
+            ),
+            Issue(
+                reporter_id=students[0].id,
+                machine_slug="lathe-kl2",
+                type="equipment",
+                severity="medium",
+                description="Spindle makes a grinding noise above 1200 RPM.",
+            ),
+        ]
+    )
 
     db.commit()
     print(f"seeded {len(SAMPLE_PROJECTS)} projects for {len(students)} students")
