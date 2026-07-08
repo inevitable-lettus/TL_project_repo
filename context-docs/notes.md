@@ -450,6 +450,21 @@ The operational safety net, plus a real performance fix:
 - Bucket CORS turned out unnecessary: browser, API, and file storage all
   share one origin through nginx.
 
+## v1.1 (started 2026-07-08)
+
+Two tracks (details in handoff.md): **A** — visual/UX pass plus small
+"thumbnail" copies of cover images (generated in the browser before upload,
+so pages stop downloading full-size photos just to draw a card); **B** — lab
+operations to outdo the admin's Sheets-based platform: machine directory with
+live status edited in a Google Sheet, machine slot booking, tool checkout,
+issue reporting — all with real login instead of typed-in emails.
+
+- **Phase A1**: the editor always capped descriptions at 500 characters but
+  the backend accepted 2000 — now both agree on 500. Also fixed: an empty
+  `frontend/public/` folder wasn't tracked by git, so a fresh clone couldn't
+  build the frontend image (git only tracks files, not folders — a `.gitkeep`
+  placeholder file fixes it).
+
 ### What's next
 **Go-live** — blocked on university IT providing the public route. The
 checklist (real Google OAuth credentials, public hostname for file URLs,

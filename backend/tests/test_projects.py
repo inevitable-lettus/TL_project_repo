@@ -44,6 +44,21 @@ def test_create_requires_auth_and_defaults_private(db, owner):
     assert db.get(Project, uuid.UUID(body["id"])) is not None
 
 
+def test_description_length_capped_at_500(db, owner):
+    client, user = owner
+    ok = client.post("/projects", json={"title": "Cap", "description": "d" * 500})
+    assert ok.status_code == 200
+
+    too_long = client.post(
+        "/projects", json={"title": "Cap", "description": "d" * 501}
+    )
+    assert too_long.status_code == 422
+
+    project = make_project(db, user["id"])
+    patched = client.patch(f"/projects/{project.id}", json={"description": "d" * 501})
+    assert patched.status_code == 422
+
+
 def test_showcase_lists_public_only_with_pagination(db, owner):
     client, user = owner
     for i in range(3):

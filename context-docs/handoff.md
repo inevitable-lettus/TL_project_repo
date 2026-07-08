@@ -32,6 +32,12 @@ Backend scaffold (`backend/app/`): `config.py` (env-driven `Settings` — `datab
 
 Run (Docker): `cp .env.example .env`, then `docker compose up -d --build`; migrate with `docker compose exec backend alembic -c backend/alembic.ini upgrade head` (always invoke alembic from the repo root / container WORKDIR so `backend.app` imports); optional demo data via `docker compose exec backend python -m backend.app.seed`. App: `http://localhost/`, API health: `http://localhost/api/health`. Tests: `docker compose exec backend pytest` and `cd frontend && npm run e2e` (needs `ENVIRONMENT=test` + `AUTH_TEST_MODE=1` + `STAFF_EMAILS=staff@uni.edu` in `.env`).
 
+## v1.1 roadmap (started 2026-07-08)
+
+Two tracks, plan at `~/.claude/plans/lets-work-on-this-linear-boole.md`: **Track A** design/UX pass + client-generated cover thumbnails (phases A1–A4), **Track B** lab ops — Sheets-driven machines directory, booking, tool checkout, issue reporting (phases B5–B8), feature parity target: https://vrucando.github.io/tinkers-lab-platform/.
+
+Phase A1 done 2026-07-08: project description `max_length` aligned to the editor's 500-char cap (`ProjectCreate`/`ProjectPatch`, was 2000; boundary test added — 58 backend tests). Also committed `frontend/public/.gitkeep` — the empty dir was untracked, so a clean checkout failed the frontend Docker build (`"/app/public": not found`).
+
 ## Schema reference
 
 Migration 0001 (done):
