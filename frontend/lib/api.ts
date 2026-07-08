@@ -81,7 +81,12 @@ export const api = {
 
   uploadSlot: (
     projectId: string,
-    body: { filename: string; size: number; mime_type: string; kind: "media" | "attachment" },
+    body: {
+      filename: string;
+      size: number;
+      mime_type: string;
+      kind: "media" | "attachment" | "thumb";
+    },
   ) => request<UploadSlot>(`/projects/${projectId}/files`, { method: "POST", body }),
   avatarSlot: (body: { filename: string; size: number; mime_type: string }) =>
     request<UploadSlot>("/users/me/avatar", { method: "POST", body }),
@@ -119,14 +124,25 @@ export const api = {
     }),
 };
 
+type HasCover = {
+  cover_file_id: string | null;
+  cover_thumb_file_id: string | null;
+};
+
+// Cards and the slider prefer the small browser-generated thumb; older
+// projects without one fall back to the full-size cover.
+export function coverIdFor(project: HasCover): string | null {
+  return project.cover_thumb_file_id ?? project.cover_file_id;
+}
+
 // Resolve cover images for a list of projects: file id → fresh presigned URL.
 // Presigning is cheap (local HMAC in the backend), so parallel per-cover calls
 // are fine at this scale.
 export async function coverUrlMap(
-  projects: { cover_file_id: string | null }[],
+  projects: HasCover[],
   cookie?: string,
 ): Promise<Record<string, string>> {
-  const ids = [...new Set(projects.flatMap((p) => p.cover_file_id ?? []))];
+  const ids = [...new Set(projects.flatMap((p) => coverIdFor(p) ?? []))];
   const entries = await Promise.all(
     ids.map(async (id) => [id, (await api.downloadUrl(id, cookie)).url] as const),
   );

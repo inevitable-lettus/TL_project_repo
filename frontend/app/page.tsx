@@ -2,24 +2,25 @@ import Link from "next/link";
 import { ProjectCard } from "@/components/project-card";
 import { Slider, type Slide } from "@/components/slider";
 import { buttonClass, SysLabel, Window } from "@/components/ui";
-import { api, coverUrlMap } from "@/lib/api";
+import { api, coverIdFor, coverUrlMap } from "@/lib/api";
 
 export default async function Home() {
   const [slider, featured] = await Promise.all([api.slider(), api.featured()]);
   const covers = await coverUrlMap([...slider, ...featured]);
 
-  const slides: Slide[] = slider.flatMap((p) =>
-    p.cover_file_id && covers[p.cover_file_id]
+  const slides: Slide[] = slider.flatMap((p) => {
+    const coverId = coverIdFor(p);
+    return coverId && covers[coverId]
       ? [
           {
             id: p.id,
             title: p.title,
             ownerName: p.owner_name,
-            coverUrl: covers[p.cover_file_id],
+            coverUrl: covers[coverId],
           },
         ]
-      : [],
-  );
+      : [];
+  });
 
   return (
     <div className="flex flex-col gap-8 md:gap-12">
@@ -49,9 +50,7 @@ export default async function Home() {
                 <ProjectCard
                   key={p.id}
                   project={p}
-                  coverUrl={
-                    p.cover_file_id ? covers[p.cover_file_id] : undefined
-                  }
+                  coverUrl={covers[coverIdFor(p) ?? ""]}
                 />
               ))}
             </div>

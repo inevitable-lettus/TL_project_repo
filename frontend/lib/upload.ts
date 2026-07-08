@@ -23,7 +23,7 @@ async function runUpload(
 export function uploadProjectFile(
   projectId: string,
   file: File,
-  kind: "media" | "attachment",
+  kind: "media" | "attachment" | "thumb",
   onState: (state: UploadState) => void,
 ): Promise<FileInfo> {
   return api

@@ -470,6 +470,14 @@ issue reporting — all with real login instead of typed-in emails.
   orphan cleanup, delete-purges-storage) apply automatically. Setting a new
   thumbnail deletes the old one so replaced copies don't pile up against a
   student's storage quota.
+- **Phase A3**: when a student picks a cover, their own browser now shrinks
+  the image (max 1280px, WebP) and uploads that small copy alongside —
+  project cards and the landing slider load the small copy instead of the
+  full-size photo, so pages feel much lighter. Old projects without a copy
+  keep working (they fall back to the original). Avatars get the same
+  treatment (shrunk to 512px before upload). The server never touches image
+  bytes — the shrinking happens entirely in the browser, so the "backend
+  never streams files" rule holds.
 
 ### What's next
 **Go-live** — blocked on university IT providing the public route. The

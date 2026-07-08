@@ -40,6 +40,8 @@ Phase A1 done 2026-07-08: project description `max_length` aligned to the editor
 
 Phase A2 done 2026-07-08: backend cover thumbnails. Migration 0004 adds `projects.cover_thumb_file_id` (FK→files, SET NULL, up/down/up verified). New file `kind="thumb"` (just the `Literal` in `UploadSlotIn` — slot/confirm/quota/purge machinery unchanged). `PATCH /projects/{id}` accepts `cover_thumb_file_id`: must be a ready `kind="thumb"` file of that project (kind check makes purge-on-replace safe — thumbs are never embedded or attached); replacing/clearing purges the old thumb object-then-row (avatar-replace pattern). Thumbs are ordinary project-scoped File rows, so project delete + cleanup sweep cover them for free. 60 backend tests.
 
+Phase A3 done 2026-07-08: frontend thumbnails. `lib/image.ts` (`downscaleImage`: `createImageBitmap` → canvas → WebP q0.82; same-origin presigned GETs keep the canvas untainted). `CoverPicker.pick` fetches the picked image, downscales to 1280px, uploads it as `kind="thumb"` through the normal flow, then one PATCH sets `cover_file_id`+`cover_thumb_file_id` (decode failure → null thumb, cards fall back to the original; picker disabled while busy). Avatars downscale to 512px before upload (no schema change). `coverIdFor()` in `lib/api.ts` prefers thumb over cover; `coverUrlMap` + landing/showcase/profile/slider call sites use it. E2E: authoring journey asserts a distinct thumb id lands on the showcase card `src`; public-pages spec (cover-only PATCH) covers the fallback — 19 Playwright green. Gotcha hit: a container created during a failed port-80 bind keeps **no host port mapping** even after the conflict is gone — `docker compose up -d --force-recreate nginx` fixes it.
+
 ## Schema reference
 
 Migration 0001 (done):

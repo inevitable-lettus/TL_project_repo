@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ProjectCard } from "@/components/project-card";
 import { SysLabel, Window } from "@/components/ui";
-import { api, coverUrlMap } from "@/lib/api";
+import { api, coverIdFor, coverUrlMap } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Browse — Tinkerer Lab" };
 
@@ -39,7 +39,7 @@ export default async function Showcase({
             <ProjectCard
               key={p.id}
               project={p}
-              coverUrl={p.cover_file_id ? covers[p.cover_file_id] : undefined}
+              coverUrl={covers[coverIdFor(p) ?? ""]}
             />
           ))}
         </div>

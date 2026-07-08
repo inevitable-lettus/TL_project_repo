@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectCard } from "@/components/project-card";
 import { Badge, buttonClass, SysLabel, Window } from "@/components/ui";
-import { api, ApiError, coverUrlMap } from "@/lib/api";
+import { api, ApiError, coverIdFor, coverUrlMap } from "@/lib/api";
 import type { Profile } from "@/lib/types";
 
 async function fetchProfile(id: string): Promise<{
@@ -113,7 +113,7 @@ export default async function ProfilePage({
               <ProjectCard
                 key={p.id}
                 project={p}
-                coverUrl={p.cover_file_id ? covers[p.cover_file_id] : undefined}
+                coverUrl={covers[coverIdFor(p) ?? ""]}
                 showVisibility={!p.is_public}
               />
             ))}

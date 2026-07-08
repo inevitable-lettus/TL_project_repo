@@ -12,7 +12,7 @@ export type FileInfo = {
   size: number;
   mime_type: string;
   status: "pending" | "ready";
-  kind: "media" | "attachment";
+  kind: "media" | "attachment" | "thumb";
 };
 
 export type ProjectListItem = {
@@ -21,6 +21,7 @@ export type ProjectListItem = {
   description: string | null;
   is_public: boolean;
   cover_file_id: string | null;
+  cover_thumb_file_id: string | null;
   featured_rank: number | null;
   slider_pinned: boolean;
   owner_id: string;

@@ -52,9 +52,16 @@ test("create, write, embed media, publish — then anonymous can read it", async
   await authorPage.getByTestId("save-project").click();
   await expect(authorPage.getByTestId("save-status")).toHaveText("SAVED");
 
-  // The fresh embed is offered as a cover immediately.
+  // The fresh embed is offered as a cover immediately. Picking it also
+  // generates and uploads a downscaled thumb copy.
   await authorPage.getByTestId("cover-picker").locator("button").first().click();
   await expect(authorPage.getByText("COVER", { exact: true })).toBeVisible();
+
+  const detail = await (
+    await authorContext.request.get(`/api/projects/${projectId}`)
+  ).json();
+  expect(detail.cover_thumb_file_id).toBeTruthy();
+  expect(detail.cover_thumb_file_id).not.toBe(detail.cover_file_id);
 
   await authorPage.goto("/dashboard");
   const row = authorPage.getByRole("listitem").filter({ hasText: title });
@@ -65,6 +72,16 @@ test("create, write, embed media, publish — then anonymous can read it", async
   await page.goto(`/projects/${projectId}`);
   await expect(page.getByText("Built from scrap plywood.")).toBeVisible();
   await expect(page.locator("figure img")).toBeVisible();
+
+  // Cards serve the thumb file, not the full-size cover.
+  await page.goto("/projects");
+  const cardImg = page
+    .getByTestId("showcase-grid")
+    .locator(`a[href="/projects/${projectId}"] img`);
+  await expect(cardImg).toHaveAttribute(
+    "src",
+    new RegExp(detail.cover_thumb_file_id),
+  );
 });
 
 test("oversize upload shows the plain limit message", async () => {
