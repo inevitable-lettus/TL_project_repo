@@ -62,7 +62,7 @@ class UploadSlotIn(BaseModel):
     filename: str = Field(min_length=1, max_length=255)
     size: int = Field(gt=0, description="declared size in bytes (advisory)")
     mime_type: str = Field(min_length=1, max_length=255)
-    kind: Literal["media", "attachment"]
+    kind: Literal["media", "attachment", "thumb"]
 
 
 class UploadSlotOut(BaseModel):

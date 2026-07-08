@@ -94,6 +94,16 @@ class Project(Base):
             name="fk_projects_cover_file_id",
         )
     )
+    # Small browser-generated copy of the cover for cards/slider; falls back
+    # to cover_file_id when NULL.
+    cover_thumb_file_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "files.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_projects_cover_thumb_file_id",
+        )
+    )
     featured_rank: Mapped[int | None] = mapped_column(Integer)
     slider_pinned: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false")

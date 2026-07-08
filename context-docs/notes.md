@@ -464,6 +464,12 @@ issue reporting — all with real login instead of typed-in emails.
   `frontend/public/` folder wasn't tracked by git, so a fresh clone couldn't
   build the frontend image (git only tracks files, not folders — a `.gitkeep`
   placeholder file fixes it).
+- **Phase A2**: the database can now remember a small "thumbnail" copy of a
+  project's cover image (new column + a new file kind `thumb`). The thumbnail
+  is just another stored file, so all the existing safety nets (size limits,
+  orphan cleanup, delete-purges-storage) apply automatically. Setting a new
+  thumbnail deletes the old one so replaced copies don't pile up against a
+  student's storage quota.
 
 ### What's next
 **Go-live** — blocked on university IT providing the public route. The

@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
+from . import storage
 from .access import get_project_or_404, require_can_edit, require_can_view
 from .auth import get_current_user, get_current_user_optional
 from .config import settings
@@ -103,6 +104,7 @@ def project_item(project: Project) -> ProjectListItem:
         description=project.description,
         is_public=project.is_public,
         cover_file_id=project.cover_file_id,
+        cover_thumb_file_id=project.cover_thumb_file_id,
         featured_rank=project.featured_rank,
         slider_pinned=project.slider_pinned,
         owner_id=project.owner_id,
@@ -130,6 +132,7 @@ class ProjectPatch(BaseModel):
     description: str | None = Field(default=None, max_length=500)
     content: dict | None = None
     cover_file_id: uuid.UUID | None = None
+    cover_thumb_file_id: uuid.UUID | None = None
     is_public: bool | None = None
 
 
@@ -273,6 +276,30 @@ def update_project(
             raise HTTPException(
                 status_code=400, detail="cover must be a ready file of this project"
             )
+    if "cover_thumb_file_id" in changes:
+        new_thumb_id = changes["cover_thumb_file_id"]
+        if new_thumb_id is not None:
+            thumb = db.get(File, new_thumb_id)
+            if (
+                thumb is None
+                or thumb.project_id != project.id
+                or thumb.status != "ready"
+                or thumb.kind != "thumb"
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail="thumbnail must be a ready thumb file of this project",
+                )
+        # Replaced thumbs are dead weight: nothing else references a thumb
+        # file, so purge the old one (object first, then row).
+        old_thumb_id = project.cover_thumb_file_id
+        if old_thumb_id is not None and old_thumb_id != new_thumb_id:
+            old_thumb = db.get(File, old_thumb_id)
+            if old_thumb is not None:
+                storage.remove_object(old_thumb.object_key)
+                project.cover_thumb_file_id = None
+                db.flush()
+                db.delete(old_thumb)
 
     for field, value in changes.items():
         setattr(project, field, value)

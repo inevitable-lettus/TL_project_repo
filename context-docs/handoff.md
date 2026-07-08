@@ -38,6 +38,8 @@ Two tracks, plan at `~/.claude/plans/lets-work-on-this-linear-boole.md`: **Track
 
 Phase A1 done 2026-07-08: project description `max_length` aligned to the editor's 500-char cap (`ProjectCreate`/`ProjectPatch`, was 2000; boundary test added — 58 backend tests). Also committed `frontend/public/.gitkeep` — the empty dir was untracked, so a clean checkout failed the frontend Docker build (`"/app/public": not found`).
 
+Phase A2 done 2026-07-08: backend cover thumbnails. Migration 0004 adds `projects.cover_thumb_file_id` (FK→files, SET NULL, up/down/up verified). New file `kind="thumb"` (just the `Literal` in `UploadSlotIn` — slot/confirm/quota/purge machinery unchanged). `PATCH /projects/{id}` accepts `cover_thumb_file_id`: must be a ready `kind="thumb"` file of that project (kind check makes purge-on-replace safe — thumbs are never embedded or attached); replacing/clearing purges the old thumb object-then-row (avatar-replace pattern). Thumbs are ordinary project-scoped File rows, so project delete + cleanup sweep cover them for free. 60 backend tests.
+
 ## Schema reference
 
 Migration 0001 (done):
