@@ -63,6 +63,15 @@ export type UploadSlot = {
   upload_fields: Record<string, string>;
 };
 
+export type Machine = {
+  slug: string;
+  name: string;
+  category: string;
+  status: "available" | "in_use" | "maintenance" | "offline";
+  training_required: boolean;
+  notes: string;
+};
+
 export type DownloadUrl = {
   url: string;
   filename: string;

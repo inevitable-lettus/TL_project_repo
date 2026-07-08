@@ -470,6 +470,14 @@ issue reporting — all with real login instead of typed-in emails.
   orphan cleanup, delete-purges-storage) apply automatically. Setting a new
   thumbnail deletes the old one so replaced copies don't pile up against a
   student's storage quota.
+- **Phase B5**: the site now has a public "Machines" page listing lab
+  equipment by category with a live status chip (available / in use /
+  maintenance / offline) and a training-required marker. The clever bit:
+  the machine list isn't in our database — staff keep it in a Google Sheet
+  published as CSV, and the backend re-reads it every couple of minutes.
+  Editing a spreadsheet cell updates the site; no deploy, no admin screen.
+  If the sheet is unreachable the backend serves the last copy it saw.
+  Local dev uses a demo CSV file shipped with the frontend.
 - **Phase A4**: the public pages got their storytelling pass. The landing now
   opens with a "README.TXT" window (big serif headline + what-this-is line +
   two buttons) before the slideshow, and the featured section leads with one

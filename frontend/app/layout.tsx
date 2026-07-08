@@ -45,6 +45,9 @@ export default function RootLayout({
               <Link href="/projects" className={menuLink}>
                 Browse
               </Link>
+              <Link href="/machines" className={menuLink}>
+                Machines
+              </Link>
               <UserMenu />
             </div>
           </nav>

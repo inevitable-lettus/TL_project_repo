@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # Landing slider slot count (pinned first, random public fill).
     slider_size: int = 8
 
+    # Machines directory content: a Google Sheet "publish to web" CSV link.
+    # Empty = the machines feature reports 503 (not configured).
+    machines_sheet_csv_url: str = ""
+    machines_cache_seconds: int = 120
+
     google_client_id: str
     google_client_secret: str
     google_hosted_domain: str

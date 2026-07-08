@@ -14,7 +14,11 @@ The screens and behaviors. **Visual styling — typography, color, spacing, comp
 | Project editor | Logged-in students/staff (owner) | Visual WYSIWYG (TipTap): headings, text marks, lists, inline image/video/diagram embeds (each embed runs the presigned upload flow), attachments manager for the downloads area, cover picker. |
 | Profile edit | Logged-in owner | Description, program, enrollment year, avatar upload. |
 | My-projects dashboard | Logged-in students/staff | The user's own projects (public and private badges), create/delete, toggle visibility. |
-| Admin dashboard | Staff only | Tabs: **Curation** (feature + reorder, pin to slider, landing preview), **People** (promote/demote staff), **Moderation** (all projects incl. private; edit/hide/delete). All admin actions via UI — never code. |
+| Admin dashboard | Staff only | Tabs: **Curation** (feature + reorder, pin to slider, landing preview), **People** (promote/demote staff), **Moderation** (all projects incl. private; edit/hide/delete), and — as lab ops land — **Bookings** (pending queue, approve/reject), **Checkouts** (open + overdue), **Issues** (triage/resolve). All admin actions via UI — never code. |
+| Machines directory | Everyone (incl. anonymous) | Lab equipment grouped by category with live status badge (available / in use / maintenance / offline), training-required chip, notes. Content comes from a staff-edited Google Sheet — no admin UI needed. Links into booking + issue reporting. |
+| Machine booking | Logged-in students/staff | Pick a machine → day picker + slot grid (taken slots disabled) → purpose → request. Bookings start pending; staff approve/reject in the admin dashboard. "My bookings" lives on the dashboard. |
+| Tool checkout | Logged-in students/staff | Log a tool out (category, tool name, quantity, due date); see own open checkouts; mark returned. Staff see an overdue list in the admin dashboard. |
+| Issue report | Logged-in students/staff | Report a broken machine or safety issue (type, severity, machine optional, description). Staff triage/resolve in the admin dashboard. |
 
 ## Project content model (blog)
 

@@ -1,5 +1,6 @@
 import type {
   DownloadUrl,
+  Machine,
   Profile,
   ProjectDetail,
   ProjectListItem,
@@ -73,6 +74,8 @@ export const api = {
     request<ProjectDetail>(`/projects/${id}`, { method: "PATCH", body }),
   deleteProject: (id: string) =>
     request<{ status: string }>(`/projects/${id}`, { method: "DELETE" }),
+
+  machines: () => request<Machine[]>("/machines"),
 
   profile: (id: string, cookie?: string) =>
     request<Profile>(`/users/${id}`, { cookie }),
