@@ -17,3 +17,6 @@ backups/
 
 # macOS
 .DS_Store
+
+# Design-skill cache artifacts
+.impeccable/
