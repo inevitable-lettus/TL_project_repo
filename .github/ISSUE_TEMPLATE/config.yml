@@ -1,0 +1,4 @@
+# Keep blank issues on, but nudge people toward the templates above.
+# To add "contact link" buttons here later, GitHub requires full URLs
+# (e.g. links to CONTRIBUTING.md or a Discussions page on the real repo).
+blank_issues_enabled: true

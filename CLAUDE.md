@@ -35,7 +35,7 @@ Constraints, not prose. A readable, simple codebase is the goal — not a vibe-c
 - **Small, single-purpose functions.** Clear names, shallow nesting. If a function does two things, split it.
 - **No unrequested fallbacks** or try/except that swallows errors. Fail loud during development.
 - **Comments only where intent isn't obvious from the code.** Plain, minimal — no banner blocks, no decorative headers, no comments that restate the code.
-- **Style is handled by formatters** (Prettier/ESLint for TS, Black/Ruff for Python), not by rules here.
+- **Style is handled by formatters/linters**, not by rules here: Ruff for Python, Prettier + ESLint for TS. Run them (plus type/test checks) before finishing — see [AGENTS.md](AGENTS.md). CI enforces the same checks on every PR.
 - **Strict typing both sides** — TS strict mode, Python type hints.
 - **Keep this file lean** (<300 lines). LLMs reliably follow ~150–200 instructions; Claude Code's own prompt uses ~50. Don't bloat it.
 
