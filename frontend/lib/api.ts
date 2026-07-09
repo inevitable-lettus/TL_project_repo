@@ -58,6 +58,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 export const api = {
   me: (cookie?: string) => request<User>("/auth/me", { cookie }),
   logout: () => request<{ status: string }>("/auth/logout", { method: "POST" }),
+  // Dev only: backend 404s this unless ENVIRONMENT=test + AUTH_TEST_MODE.
+  testLogin: (email: string, name: string) =>
+    request<User>("/auth/test-login", { method: "POST", body: { email, name } }),
 
   showcase: (limit = 24, offset = 0) =>
     request<ProjectPage>(`/projects?limit=${limit}&offset=${offset}`),

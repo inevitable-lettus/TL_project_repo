@@ -101,6 +101,12 @@ SAMPLE_PROJECTS = [
     ("Kinetic Sand Table", "A magnet drags a ball through sand.", True),
     ("Weather Station", "ESP32 station logging to the lab dashboard.", True),
     ("Corner Bookshelf", "First woodworking project — CNC-cut joints.", True),
+    ("Laser-Cut Puzzle Box", "Interlocking finger joints, cut on the lab laser, no glue.", True),
+    ("Arduino Plant Waterer", "Soil-moisture sensor drives a pump on a schedule.", True),
+    ("Retro Handheld Console", "Raspberry Pi emulator in a printed shell with real buttons.", True),
+    ("Geodesic Cardboard Dome", "A 1.5m play dome from scored, folded cardboard triangles.", True),
+    ("Belt-Drive Longboard", "Electric skateboard: hobby ESC, thumb throttle, printed mounts.", True),
+    ("PID Reflow Hotplate", "Turned a cheap hotplate into a solder-reflow station.", True),
     ("Secret Robot", "Competition entry, unlisted until the reveal.", False),
 ]
 

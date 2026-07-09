@@ -132,6 +132,7 @@ def login() -> RedirectResponse:
         "response_type": "code",
         "scope": "openid email profile",
         "hd": settings.google_hosted_domain,  # hint only; callback re-checks
+        "prompt": "select_account",  # always show picker; never silently reuse a session
         "state": state,
     }
     response = RedirectResponse(f"{GOOGLE_AUTH_URL}?{urlencode(params)}")

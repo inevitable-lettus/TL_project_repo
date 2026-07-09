@@ -27,9 +27,23 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <a href="/api/auth/login" data-testid="login-link" className={menuLink}>
-        Log in
-      </a>
+      <div className="flex items-center gap-1">
+        <a href="/api/auth/login" data-testid="login-link" className={menuLink}>
+          Log in
+        </a>
+        {process.env.NODE_ENV !== "production" && (
+          <button
+            type="button"
+            data-testid="dev-login"
+            className={menuLink}
+            onClick={() =>
+              api.testLogin("dev@local", "Dev User").then(() => window.location.reload())
+            }
+          >
+            Dev login
+          </button>
+        )}
+      </div>
     );
   }
 
