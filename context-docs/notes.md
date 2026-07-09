@@ -450,6 +450,41 @@ The operational safety net, plus a real performance fix:
 - Bucket CORS turned out unnecessary: browser, API, and file storage all
   share one origin through nginx.
 
+### Opening the repo to student contributors (2026-07-09)
+Groundwork so other students can contribute, most of them using their own AI
+assistants to write code. The key idea: **you can't trust prose to keep code
+clean, so we added automatic checks that run on every proposed change.**
+
+- **Automatic code checks (linters/formatters).** A **linter** finds likely
+  mistakes; a **formatter** rewrites code into one consistent style so nobody
+  argues about spacing. We turned these on for real:
+  - Python: **Ruff** (config in `pyproject.toml`) — `ruff check` (find problems),
+    `ruff format` (fix style).
+  - Frontend: **Prettier** (config in `frontend/.prettierrc.json`) plus the
+    existing ESLint. `npm run format`, `npm run lint`, `npm run typecheck`.
+  (CLAUDE.md had claimed these existed; now they actually do.)
+- **CI (Continuous Integration).** `.github/workflows/ci.yml` — GitHub
+  automatically runs all those checks, plus the backend tests, on every pull
+  request. If a contributor's AI writes sloppy code, CI catches it before a human
+  ever looks. Playwright browser tests are left out of CI for now (they need the
+  whole stack running); that's a known follow-up.
+- **AI-assistant guidance.** `AGENTS.md` (root) is the standard file most AI
+  coding tools read automatically; it lists the security rules and the exact
+  self-check commands. `backend/AGENTS.md` mirrors the existing `frontend/AGENTS.md`.
+  `.github/copilot-instructions.md` points Copilot at the same rules.
+- **Newcomer docs (written plainly, jargon defined).** A rewritten `README.md`
+  (now documents the real Docker workflow, not the old backend-only one), a
+  step-by-step `docs/setup.md` that assumes zero prior knowledge (install Docker →
+  run → troubleshoot), `CONTRIBUTING.md` (how to open a pull request + an
+  AI-usage policy), `CODE_OF_CONDUCT.md`, and `SECURITY.md` (report
+  vulnerabilities privately, never in a public issue).
+- **Issue/PR scaffolding.** `.github/ISSUE_TEMPLATE/` (bug, feature, good-first),
+  a pull-request checklist template, and `docs/good-first-issues.md` — six real
+  beginner tasks for people to pick up.
+- **Left for the owner:** choosing an open-source **license** (there's still no
+  LICENSE file — CONTRIBUTING flags this), and filling in the **contact emails**
+  placeholdered in CODE_OF_CONDUCT.md and SECURITY.md before going public.
+
 ### What's next
 **Go-live** — blocked on university IT providing the public route. The
 checklist (real Google OAuth credentials, public hostname for file URLs,
