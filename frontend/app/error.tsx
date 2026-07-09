@@ -2,7 +2,12 @@
 
 import { Button, Window } from "@/components/ui";
 
-export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
+export default function ErrorPage({
+  reset,
+}: {
+  error: Error;
+  reset: () => void;
+}) {
   return (
     <div className="mx-auto max-w-xl pt-12">
       <Window title="SYSTEM_ERROR.LOG" floating>

@@ -75,7 +75,12 @@ def test_detail_visibility_and_ready_files_only(db, owner):
     ready = full_upload(client, project.id, b"data")
     client.post(  # second slot never confirmed -> pending, must not list
         f"/projects/{project.id}/files",
-        json={"filename": "p.txt", "size": 5, "mime_type": "text/plain", "kind": "media"},
+        json={
+            "filename": "p.txt",
+            "size": 5,
+            "mime_type": "text/plain",
+            "kind": "media",
+        },
     )
 
     detail = make_client().get(f"/projects/{project.id}").json()
@@ -98,8 +103,13 @@ def test_patch_ownership_rules(db, owner):
 
     stranger = make_client()
     login(stranger, "stranger@uni.edu")
-    assert stranger.patch(f"/projects/{public.id}", json={"title": "X"}).status_code == 403
-    assert stranger.patch(f"/projects/{private.id}", json={"title": "X"}).status_code == 404
+    assert (
+        stranger.patch(f"/projects/{public.id}", json={"title": "X"}).status_code == 403
+    )
+    assert (
+        stranger.patch(f"/projects/{private.id}", json={"title": "X"}).status_code
+        == 404
+    )
 
     response = client.patch(f"/projects/{public.id}", json={"title": "Renamed"})
     assert response.status_code == 200
@@ -118,17 +128,28 @@ def test_content_validation(db, owner):
 
     url = f"/projects/{project.id}"
     good = doc(
-        {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Build"}]},
+        {
+            "type": "heading",
+            "attrs": {"level": 2},
+            "content": [{"type": "text", "text": "Build"}],
+        },
         para("hello", marks=[{"type": "bold"}]),
         media(own_file["id"]),
         para("link", marks=[{"type": "link", "attrs": {"href": "https://uni.edu"}}]),
     )
     assert client.patch(url, json={"content": good}).status_code == 200
 
-    assert client.patch(url, json={"content": doc(media(foreign_file["id"]))}).status_code == 400
-    assert client.patch(url, json={"content": doc({"type": "iframe"})}).status_code == 400
+    assert (
+        client.patch(url, json={"content": doc(media(foreign_file["id"]))}).status_code
+        == 400
+    )
+    assert (
+        client.patch(url, json={"content": doc({"type": "iframe"})}).status_code == 400
+    )
     assert client.patch(url, json={"content": {"type": "paragraph"}}).status_code == 400
-    bad_link = doc(para("x", marks=[{"type": "link", "attrs": {"href": "javascript:alert(1)"}}]))
+    bad_link = doc(
+        para("x", marks=[{"type": "link", "attrs": {"href": "javascript:alert(1)"}}])
+    )
     assert client.patch(url, json={"content": bad_link}).status_code == 400
     bad_media = doc({"type": "media", "attrs": {"fileId": "not-a-uuid"}})
     assert client.patch(url, json={"content": bad_media}).status_code == 400
@@ -143,8 +164,12 @@ def test_cover_must_be_own_ready_file(db, owner):
 
     url = f"/projects/{project.id}"
     assert client.patch(url, json={"cover_file_id": own_file["id"]}).status_code == 200
-    assert client.patch(url, json={"cover_file_id": foreign_file["id"]}).status_code == 400
-    assert client.patch(url, json={"cover_file_id": str(uuid.uuid4())}).status_code == 400
+    assert (
+        client.patch(url, json={"cover_file_id": foreign_file["id"]}).status_code == 400
+    )
+    assert (
+        client.patch(url, json={"cover_file_id": str(uuid.uuid4())}).status_code == 400
+    )
 
 
 def test_delete_purges_objects_then_rows(db, owner):

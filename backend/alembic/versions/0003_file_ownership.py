@@ -8,9 +8,8 @@ Create Date: 2026-07-02
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
-
 from alembic import op
+from sqlalchemy.dialects.postgresql import UUID
 
 revision: str = "0003_file_ownership"
 down_revision: str | None = "0002_profiles_content"
@@ -20,9 +19,7 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     op.alter_column("files", "project_id", nullable=True)
-    op.add_column(
-        "files", sa.Column("owner_id", UUID(as_uuid=True), nullable=True)
-    )
+    op.add_column("files", sa.Column("owner_id", UUID(as_uuid=True), nullable=True))
     op.create_foreign_key(
         "fk_files_owner_id",
         "files",

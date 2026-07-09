@@ -46,9 +46,7 @@ def user_storage_used(db: Session, owner_id: uuid.UUID) -> int:
 def oversize_error() -> HTTPException:
     # Same plain message at all three enforcement points (design.md).
     limit_gb = settings.max_file_size / 1024**3
-    return HTTPException(
-        status_code=400, detail=f"file exceeds {limit_gb:g} GB limit"
-    )
+    return HTTPException(status_code=400, detail=f"file exceeds {limit_gb:g} GB limit")
 
 
 def purge_project_objects(project: Project) -> None:
@@ -166,7 +164,7 @@ def confirm_upload(
         if error.code == "NoSuchKey":
             raise HTTPException(
                 status_code=400, detail="no uploaded bytes found for this file"
-            )
+            ) from None
         raise
 
     # Enforcement #3 (authoritative): the actual size in storage decides.
@@ -175,9 +173,7 @@ def confirm_upload(
         db.delete(file)
         db.commit()
         raise oversize_error()
-    used_without_this = (
-        user_storage_used(db, file_charged_owner_id(file)) - file.size
-    )
+    used_without_this = user_storage_used(db, file_charged_owner_id(file)) - file.size
     if used_without_this + stat.size > settings.max_user_storage:
         storage.remove_object(file.object_key)
         db.delete(file)
@@ -266,11 +262,5 @@ def media_urls(
         .all()
     )
     if len(files) != len(set(body.file_ids)):
-        raise HTTPException(
-            status_code=400, detail="unknown file ids for this project"
-        )
-    return {
-        "urls": {
-            str(f.id): storage.presigned_get_url(f.object_key) for f in files
-        }
-    }
+        raise HTTPException(status_code=400, detail="unknown file ids for this project")
+    return {"urls": {str(f.id): storage.presigned_get_url(f.object_key) for f in files}}

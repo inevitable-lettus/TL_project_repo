@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -182,7 +182,7 @@ def test_sweep_removes_stale_pending_only(db, owner_client):
     db.execute(
         File.__table__.update()
         .where(File.id == uuid.UUID(stale["file"]["id"]))
-        .values(created_at=datetime.now(timezone.utc) - timedelta(hours=2))
+        .values(created_at=datetime.now(UTC) - timedelta(hours=2))
     )
     db.commit()
 

@@ -66,15 +66,43 @@ function Toolbar({
   const items: [string, boolean, () => void][] = [
     ["B", active.bold, () => editor.chain().focus().toggleBold().run()],
     ["I", active.italic, () => editor.chain().focus().toggleItalic().run()],
-    ["U", active.underline, () => editor.chain().focus().toggleUnderline().run()],
+    [
+      "U",
+      active.underline,
+      () => editor.chain().focus().toggleUnderline().run(),
+    ],
     ["S", active.strike, () => editor.chain().focus().toggleStrike().run()],
     ["<>", active.code, () => editor.chain().focus().toggleCode().run()],
-    ["H2", active.h2, () => editor.chain().focus().toggleHeading({ level: 2 }).run()],
-    ["H3", active.h3, () => editor.chain().focus().toggleHeading({ level: 3 }).run()],
-    ["•—", active.bulletList, () => editor.chain().focus().toggleBulletList().run()],
-    ["1.", active.orderedList, () => editor.chain().focus().toggleOrderedList().run()],
-    ["❝", active.blockquote, () => editor.chain().focus().toggleBlockquote().run()],
-    ["{ }", active.codeBlock, () => editor.chain().focus().toggleCodeBlock().run()],
+    [
+      "H2",
+      active.h2,
+      () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+    ],
+    [
+      "H3",
+      active.h3,
+      () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+    ],
+    [
+      "•—",
+      active.bulletList,
+      () => editor.chain().focus().toggleBulletList().run(),
+    ],
+    [
+      "1.",
+      active.orderedList,
+      () => editor.chain().focus().toggleOrderedList().run(),
+    ],
+    [
+      "❝",
+      active.blockquote,
+      () => editor.chain().focus().toggleBlockquote().run(),
+    ],
+    [
+      "{ }",
+      active.codeBlock,
+      () => editor.chain().focus().toggleCodeBlock().run(),
+    ],
     ["HR", false, () => editor.chain().focus().setHorizontalRule().run()],
     ["LINK", active.link, setLink],
   ];
@@ -228,7 +256,12 @@ export function ProjectEditor({
       </Field>
 
       <div className="rounded-base border border-border-default bg-neutral-secondary-soft">
-        {editor && <Toolbar editor={editor} onPickMedia={() => mediaInput.current?.click()} />}
+        {editor && (
+          <Toolbar
+            editor={editor}
+            onPickMedia={() => mediaInput.current?.click()}
+          />
+        )}
         <EditorContent editor={editor} />
       </div>
       <UploadMeter state={mediaState} error={mediaError} />

@@ -107,7 +107,9 @@ test("moderation can hide any project", async ({ browser }) => {
   await owner.close();
 
   const anon = await browser.newContext();
-  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(200);
+  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(
+    200,
+  );
 
   const staffPage = await staffContext.newPage();
   await staffPage.goto("/admin");
@@ -121,7 +123,9 @@ test("moderation can hide any project", async ({ browser }) => {
   await row.getByRole("button", { name: "Hide" }).click();
   await expect(row.getByText("private", { exact: true })).toBeVisible();
 
-  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(404);
+  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(
+    404,
+  );
   await anon.close();
   await staffPage.close();
 });

@@ -8,9 +8,8 @@ Create Date: 2026-07-02
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB, UUID
-
 from alembic import op
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 revision: str = "0002_profiles_content"
 down_revision: str | None = "0001_initial"
@@ -21,9 +20,7 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.add_column("users", sa.Column("bio", sa.String(), nullable=True))
     op.add_column("users", sa.Column("program", sa.String(), nullable=True))
-    op.add_column(
-        "users", sa.Column("enrollment_year", sa.Integer(), nullable=True)
-    )
+    op.add_column("users", sa.Column("enrollment_year", sa.Integer(), nullable=True))
     op.add_column(
         "users", sa.Column("avatar_file_id", UUID(as_uuid=True), nullable=True)
     )
@@ -48,9 +45,7 @@ def upgrade() -> None:
         ["id"],
         ondelete="SET NULL",
     )
-    op.add_column(
-        "projects", sa.Column("featured_rank", sa.Integer(), nullable=True)
-    )
+    op.add_column("projects", sa.Column("featured_rank", sa.Integer(), nullable=True))
     op.add_column(
         "projects",
         sa.Column(
@@ -75,9 +70,7 @@ def upgrade() -> None:
 
     op.add_column(
         "files",
-        sa.Column(
-            "kind", sa.String(), nullable=False, server_default="attachment"
-        ),
+        sa.Column("kind", sa.String(), nullable=False, server_default="attachment"),
     )
 
 
@@ -88,9 +81,7 @@ def downgrade() -> None:
     op.drop_index("ix_projects_featured_rank", table_name="projects")
     op.drop_column("projects", "slider_pinned")
     op.drop_column("projects", "featured_rank")
-    op.drop_constraint(
-        "fk_projects_cover_file_id", "projects", type_="foreignkey"
-    )
+    op.drop_constraint("fk_projects_cover_file_id", "projects", type_="foreignkey")
     op.drop_column("projects", "cover_file_id")
     op.drop_column("projects", "content")
 

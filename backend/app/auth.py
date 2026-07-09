@@ -1,6 +1,6 @@
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
 import httpx
@@ -38,7 +38,7 @@ def _redirect_uri() -> str:
 def create_session_token(user_id: uuid.UUID) -> str:
     payload = {
         "sub": str(user_id),
-        "exp": datetime.now(timezone.utc) + timedelta(seconds=settings.session_ttl_seconds),
+        "exp": datetime.now(UTC) + timedelta(seconds=settings.session_ttl_seconds),
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
@@ -132,7 +132,7 @@ def login() -> RedirectResponse:
         "response_type": "code",
         "scope": "openid email profile",
         "hd": settings.google_hosted_domain,  # hint only; callback re-checks
-        "prompt": "select_account",  # always show picker; never silently reuse a session
+        "prompt": "select_account",  # always show the picker; never reuse a session
         "state": state,
     }
     response = RedirectResponse(f"{GOOGLE_AUTH_URL}?{urlencode(params)}")

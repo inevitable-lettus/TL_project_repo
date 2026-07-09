@@ -87,7 +87,11 @@ function renderMedia(node: TipTapNode, ctx: MediaContext, key: number) {
   );
 }
 
-function renderNode(node: TipTapNode, ctx: MediaContext, key: number): ReactNode {
+function renderNode(
+  node: TipTapNode,
+  ctx: MediaContext,
+  key: number,
+): ReactNode {
   const children = node.content?.map((child, i) => renderNode(child, ctx, i));
   switch (node.type) {
     case "text":
@@ -109,13 +113,19 @@ function renderNode(node: TipTapNode, ctx: MediaContext, key: number): ReactNode
     }
     case "bulletList":
       return (
-        <ul key={key} className="my-3 list-disc space-y-2 pl-6 text-[15px] leading-[1.65]">
+        <ul
+          key={key}
+          className="my-3 list-disc space-y-2 pl-6 text-[15px] leading-[1.65]"
+        >
           {children}
         </ul>
       );
     case "orderedList":
       return (
-        <ol key={key} className="my-3 list-decimal space-y-2 pl-6 text-[15px] leading-[1.65]">
+        <ol
+          key={key}
+          className="my-3 list-decimal space-y-2 pl-6 text-[15px] leading-[1.65]"
+        >
           {children}
         </ol>
       );

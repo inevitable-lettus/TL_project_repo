@@ -53,7 +53,11 @@ test("create, write, embed media, publish — then anonymous can read it", async
   await expect(authorPage.getByTestId("save-status")).toHaveText("SAVED");
 
   // The fresh embed is offered as a cover immediately.
-  await authorPage.getByTestId("cover-picker").locator("button").first().click();
+  await authorPage
+    .getByTestId("cover-picker")
+    .locator("button")
+    .first()
+    .click();
   await expect(authorPage.getByText("COVER", { exact: true })).toBeVisible();
 
   await authorPage.goto("/dashboard");
@@ -89,15 +93,21 @@ test("visibility toggle takes effect immediately", async ({ browser }) => {
   const anon = await browser.newContext();
   const row = authorPage.getByRole("listitem").filter({ hasText: title });
 
-  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(404);
+  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(
+    404,
+  );
 
   await row.getByRole("button", { name: "Make public" }).click();
   await expect(row.getByText("public", { exact: true })).toBeVisible();
-  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(200);
+  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(
+    200,
+  );
 
   await row.getByRole("button", { name: "Make private" }).click();
   await expect(row.getByText("private", { exact: true })).toBeVisible();
-  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(404);
+  expect((await anon.request.get(`/api/projects/${projectId}`)).status()).toBe(
+    404,
+  );
 
   await anon.close();
   await authorPage.close();

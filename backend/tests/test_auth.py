@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 import pytest
@@ -113,7 +113,7 @@ def test_me_rejects_expired_token(client):
     expired = jwt.encode(
         {
             "sub": str(uuid.uuid4()),
-            "exp": datetime.now(timezone.utc) - timedelta(hours=1),
+            "exp": datetime.now(UTC) - timedelta(hours=1),
         },
         settings.jwt_secret,
         algorithm="HS256",
@@ -126,7 +126,7 @@ def test_me_rejects_token_signed_with_wrong_secret(client):
     forged = jwt.encode(
         {
             "sub": str(uuid.uuid4()),
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "exp": datetime.now(UTC) + timedelta(hours=1),
         },
         "wrong-secret",
         algorithm="HS256",
@@ -154,9 +154,7 @@ def test_staff_route_blocks_students_and_admits_staff(client):
 
 def test_test_login_disabled_outside_test_mode(client, monkeypatch):
     monkeypatch.setattr(settings, "auth_test_mode", False)
-    response = client.post(
-        "/auth/test-login", json={"email": "x@uni.edu", "name": "X"}
-    )
+    response = client.post("/auth/test-login", json={"email": "x@uni.edu", "name": "X"})
     assert response.status_code == 404
 
 

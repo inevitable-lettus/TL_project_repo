@@ -18,6 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
 
+
 def uuid_pk() -> Mapped[uuid.UUID]:
     return mapped_column(
         UUID(as_uuid=True),
@@ -38,9 +39,7 @@ class User(Base):
     id: Mapped[uuid.UUID] = uuid_pk()
     name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    role: Mapped[str] = mapped_column(
-        String, nullable=False, server_default="student"
-    )
+    role: Mapped[str] = mapped_column(String, nullable=False, server_default="student")
     bio: Mapped[str | None] = mapped_column(String)
     program: Mapped[str | None] = mapped_column(String)
     enrollment_year: Mapped[int | None] = mapped_column(Integer)

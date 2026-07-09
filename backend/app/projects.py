@@ -64,7 +64,7 @@ def collect_content_file_ids(content: dict) -> set[uuid.UUID]:
             try:
                 file_ids.add(uuid.UUID(str(raw)))
             except ValueError:
-                raise content_error("media node needs a valid fileId")
+                raise content_error("media node needs a valid fileId") from None
         for mark in node.get("marks") or []:
             mark_type = mark.get("type") if isinstance(mark, dict) else None
             if mark_type not in ALLOWED_MARK_TYPES:
@@ -87,9 +87,7 @@ def validate_project_file_ids(
         return
     owned = set(
         db.execute(
-            select(File.id).where(
-                File.id.in_(file_ids), File.project_id == project.id
-            )
+            select(File.id).where(File.id.in_(file_ids), File.project_id == project.id)
         ).scalars()
     )
     if owned != file_ids:
@@ -152,9 +150,7 @@ def create_project(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ProjectDetailOut:
-    project = Project(
-        title=body.title, description=body.description, owner_id=user.id
-    )
+    project = Project(title=body.title, description=body.description, owner_id=user.id)
     db.add(project)
     db.commit()
     db.refresh(project)

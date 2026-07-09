@@ -3,7 +3,7 @@ lose their MinIO object first, then the row (hard rule 5). Runs as its own
 compose service: python -m backend.app.cleanup"""
 
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
@@ -14,9 +14,7 @@ from .models import File
 
 
 def sweep_once(session_factory=SessionLocal) -> int:
-    cutoff = datetime.now(timezone.utc) - timedelta(
-        seconds=settings.pending_max_age_seconds
-    )
+    cutoff = datetime.now(UTC) - timedelta(seconds=settings.pending_max_age_seconds)
     removed = 0
     with session_factory() as db:
         rows = db.scalars(

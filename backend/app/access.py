@@ -16,9 +16,7 @@ def get_project_or_404(db: Session, project_id: uuid.UUID) -> Project:
 def can_view(project: Project, user: User | None) -> bool:
     if project.is_public:
         return True
-    return user is not None and (
-        user.id == project.owner_id or user.role == "staff"
-    )
+    return user is not None and (user.id == project.owner_id or user.role == "staff")
 
 
 def can_edit(project: Project, user: User) -> bool:

@@ -94,8 +94,8 @@ export function AttachmentsPanel({
         </ul>
       ) : (
         <p className="text-[15px] leading-[1.65] text-body-subtle">
-          No downloads yet. Attachments show up in the project&apos;s
-          Downloads section.
+          No downloads yet. Attachments show up in the project&apos;s Downloads
+          section.
         </p>
       )}
       <UploadMeter state={state} error={error} />

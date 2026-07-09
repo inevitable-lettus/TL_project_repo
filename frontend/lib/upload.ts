@@ -4,8 +4,7 @@ import type { FileInfo, UploadSlot } from "./types";
 // Honest upload states (design.md): uploading (bytes → MinIO), processing
 // (confirm running), then the caller gets the ready FileInfo or an error.
 export type UploadState =
-  | { phase: "uploading"; fraction: number }
-  | { phase: "processing" };
+  { phase: "uploading"; fraction: number } | { phase: "processing" };
 
 async function runUpload(
   slot: UploadSlot,

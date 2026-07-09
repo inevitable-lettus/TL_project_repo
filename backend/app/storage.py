@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from minio import Minio
 from minio.datatypes import Object, PostPolicy
@@ -57,9 +57,7 @@ def presigned_post(
 ) -> dict:
     """Presigned POST form. The content-length-range condition makes MinIO
     itself reject oversized uploads (architecture enforcement #2)."""
-    policy = PostPolicy(
-        settings.minio_bucket, datetime.now(timezone.utc) + expires
-    )
+    policy = PostPolicy(settings.minio_bucket, datetime.now(UTC) + expires)
     policy.add_equals_condition("key", object_key)
     policy.add_content_length_range_condition(1, max_size)
     fields = sign_client.presigned_post_policy(policy)

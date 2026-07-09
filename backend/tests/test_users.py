@@ -56,7 +56,11 @@ def test_update_profile_fields(db, owner):
     client, user = owner
     response = client.patch(
         "/users/me",
-        json={"bio": "I build robots", "program": "Mechatronics", "enrollment_year": 2024},
+        json={
+            "bio": "I build robots",
+            "program": "Mechatronics",
+            "enrollment_year": 2024,
+        },
     )
     assert response.status_code == 200
     db.expire_all()
@@ -77,14 +81,20 @@ def test_avatar_upload_set_and_replace(db, owner):
     assert non_image.status_code == 400
 
     first = upload_avatar(client)
-    assert client.patch("/users/me", json={"avatar_file_id": first["id"]}).status_code == 200
+    assert (
+        client.patch("/users/me", json={"avatar_file_id": first["id"]}).status_code
+        == 200
+    )
     first_key = db.get(File, uuid.UUID(first["id"])).object_key
 
     anon = make_client()  # avatars are public
     assert anon.get(f"/files/{first['id']}/download-url").status_code == 200
 
     second = upload_avatar(client, b"newer-image")
-    assert client.patch("/users/me", json={"avatar_file_id": second["id"]}).status_code == 200
+    assert (
+        client.patch("/users/me", json={"avatar_file_id": second["id"]}).status_code
+        == 200
+    )
     db.expire_all()
     assert db.get(User, uuid.UUID(user["id"])).avatar_file_id == uuid.UUID(second["id"])
     assert db.get(File, uuid.UUID(first["id"])) is None  # old avatar purged
@@ -97,7 +107,10 @@ def test_avatar_must_be_own_avatar_file(db, owner):
     other = make_client()
     login(other, "other@uni.edu")
     theirs = upload_avatar(other)
-    assert client.patch("/users/me", json={"avatar_file_id": theirs["id"]}).status_code == 400
+    assert (
+        client.patch("/users/me", json={"avatar_file_id": theirs["id"]}).status_code
+        == 400
+    )
 
     project = make_project(db, user["id"], is_public=True)
     from backend.tests.helpers import full_upload

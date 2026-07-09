@@ -30,9 +30,7 @@ def list_all_projects(
         query = query.join(User, Project.owner_id == User.id).where(
             Project.title.ilike(f"%{q}%") | User.name.ilike(f"%{q}%")
         )
-    total = db.execute(
-        select(func.count()).select_from(query.subquery())
-    ).scalar_one()
+    total = db.execute(select(func.count()).select_from(query.subquery())).scalar_one()
     projects = (
         db.execute(
             query.order_by(Project.created_at.desc()).limit(limit).offset(offset)

@@ -20,9 +20,7 @@ def login(client: TestClient, email: str, name: str = "Someone") -> dict:
 def make_project(
     db, owner_id: str, is_public: bool = False, title: str = "Robot Arm"
 ) -> Project:
-    project = Project(
-        title=title, owner_id=uuid.UUID(owner_id), is_public=is_public
-    )
+    project = Project(title=title, owner_id=uuid.UUID(owner_id), is_public=is_public)
     db.add(project)
     db.commit()
     db.refresh(project)

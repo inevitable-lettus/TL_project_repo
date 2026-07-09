@@ -30,7 +30,9 @@ export default async function Home() {
           <Slider slides={slides} />
         ) : (
           <div className="grid aspect-[21/9] place-items-center bg-neutral-secondary-soft">
-            <SysLabel>EMPTY_DESKTOP — no public projects with covers yet</SysLabel>
+            <SysLabel>
+              EMPTY_DESKTOP — no public projects with covers yet
+            </SysLabel>
           </div>
         )}
       </Window>

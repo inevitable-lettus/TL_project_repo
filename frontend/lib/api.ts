@@ -32,7 +32,10 @@ type RequestOptions = {
   cookie?: string; // SSR only: forward the incoming session cookie
 };
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const headers: Record<string, string> = {};
   if (options.body !== undefined) headers["content-type"] = "application/json";
   if (options.cookie) headers.cookie = options.cookie;
@@ -60,7 +63,10 @@ export const api = {
   logout: () => request<{ status: string }>("/auth/logout", { method: "POST" }),
   // Dev only: backend 404s this unless ENVIRONMENT=test + AUTH_TEST_MODE.
   testLogin: (email: string, name: string) =>
-    request<User>("/auth/test-login", { method: "POST", body: { email, name } }),
+    request<User>("/auth/test-login", {
+      method: "POST",
+      body: { email, name },
+    }),
 
   showcase: (limit = 24, offset = 0) =>
     request<ProjectPage>(`/projects?limit=${limit}&offset=${offset}`),
@@ -84,8 +90,17 @@ export const api = {
 
   uploadSlot: (
     projectId: string,
-    body: { filename: string; size: number; mime_type: string; kind: "media" | "attachment" },
-  ) => request<UploadSlot>(`/projects/${projectId}/files`, { method: "POST", body }),
+    body: {
+      filename: string;
+      size: number;
+      mime_type: string;
+      kind: "media" | "attachment";
+    },
+  ) =>
+    request<UploadSlot>(`/projects/${projectId}/files`, {
+      method: "POST",
+      body,
+    }),
   avatarSlot: (body: { filename: string; size: number; mime_type: string }) =>
     request<UploadSlot>("/users/me/avatar", { method: "POST", body }),
   confirmUpload: (fileId: string) =>
@@ -95,11 +110,14 @@ export const api = {
   downloadUrl: (fileId: string, cookie?: string) =>
     request<DownloadUrl>(`/files/${fileId}/download-url`, { cookie }),
   mediaUrls: (projectId: string, fileIds: string[], cookie?: string) =>
-    request<{ urls: Record<string, string> }>(`/projects/${projectId}/media-urls`, {
-      method: "POST",
-      body: { file_ids: fileIds },
-      cookie,
-    }),
+    request<{ urls: Record<string, string> }>(
+      `/projects/${projectId}/media-urls`,
+      {
+        method: "POST",
+        body: { file_ids: fileIds },
+        cookie,
+      },
+    ),
 
   adminUsers: (q = "", cookie?: string) =>
     request<User[]>(`/admin/users?q=${encodeURIComponent(q)}`, { cookie }),
@@ -109,7 +127,10 @@ export const api = {
       { cookie },
     ),
   adminSetRole: (userId: string, role: "staff" | "student") =>
-    request<User>(`/admin/users/${userId}`, { method: "PATCH", body: { role } }),
+    request<User>(`/admin/users/${userId}`, {
+      method: "PATCH",
+      body: { role },
+    }),
   adminSetFeatured: (projectIds: string[]) =>
     request<{ featured: number }>("/admin/featured", {
       method: "PUT",
@@ -131,7 +152,9 @@ export async function coverUrlMap(
 ): Promise<Record<string, string>> {
   const ids = [...new Set(projects.flatMap((p) => p.cover_file_id ?? []))];
   const entries = await Promise.all(
-    ids.map(async (id) => [id, (await api.downloadUrl(id, cookie)).url] as const),
+    ids.map(
+      async (id) => [id, (await api.downloadUrl(id, cookie)).url] as const,
+    ),
   );
   return Object.fromEntries(entries);
 }

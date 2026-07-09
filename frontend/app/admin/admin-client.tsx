@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import type { ProjectListItem, User } from "@/lib/types";
-import { Badge, Button, buttonClass, inputClass, SysLabel, Window } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  buttonClass,
+  inputClass,
+  SysLabel,
+  Window,
+} from "@/components/ui";
 
 type Tab = "curation" | "people" | "moderation";
 
@@ -40,7 +47,10 @@ export function AdminClient({
   return (
     <div className="mx-auto flex w-full max-w-[860px] flex-col gap-6">
       <Window title="ADMIN.PANEL" floating bodyClassName="p-0">
-        <nav role="tablist" className="flex border-b border-border-default px-3">
+        <nav
+          role="tablist"
+          className="flex border-b border-border-default px-3"
+        >
           {(
             [
               ["curation", "Curation"],
@@ -63,14 +73,23 @@ export function AdminClient({
         </nav>
         <div className="p-5 md:p-6">
           {tab === "curation" && (
-            <CurationTab initialFeatured={initialFeatured} projects={initialProjects} run={run} />
+            <CurationTab
+              initialFeatured={initialFeatured}
+              projects={initialProjects}
+              run={run}
+            />
           )}
-          {tab === "people" && <PeopleTab me={me} initialUsers={initialUsers} run={run} />}
+          {tab === "people" && (
+            <PeopleTab me={me} initialUsers={initialUsers} run={run} />
+          )}
           {tab === "moderation" && (
             <ModerationTab initialProjects={initialProjects} run={run} />
           )}
           {error && (
-            <p role="alert" className="mt-4 font-mono text-[12px] text-fg-danger">
+            <p
+              role="alert"
+              className="mt-4 font-mono text-[12px] text-fg-danger"
+            >
               {error}
             </p>
           )}
@@ -137,7 +156,10 @@ function CurationTab({
           </a>
         </div>
         {featured.length > 0 ? (
-          <ol data-testid="featured-list" className="flex flex-col divide-y divide-border-default-subtle">
+          <ol
+            data-testid="featured-list"
+            className="flex flex-col divide-y divide-border-default-subtle"
+          >
             {featured.map((project, index) => (
               <li key={project.id} className="flex items-center gap-3 py-2">
                 <SysLabel className="w-6 text-right">{index + 1}.</SysLabel>
@@ -147,15 +169,29 @@ function CurationTab({
                   </span>
                   <SysLabel>{project.owner_name}</SysLabel>
                 </span>
-                <Button variant="ghost" aria-label={`Move ${project.title} up`} disabled={index === 0} onClick={() => move(index, -1)}>
+                <Button
+                  variant="ghost"
+                  aria-label={`Move ${project.title} up`}
+                  disabled={index === 0}
+                  onClick={() => move(index, -1)}
+                >
                   ↑
                 </Button>
-                <Button variant="ghost" aria-label={`Move ${project.title} down`} disabled={index === featured.length - 1} onClick={() => move(index, 1)}>
+                <Button
+                  variant="ghost"
+                  aria-label={`Move ${project.title} down`}
+                  disabled={index === featured.length - 1}
+                  onClick={() => move(index, 1)}
+                >
                   ↓
                 </Button>
                 <Button
                   variant="tertiary"
-                  onClick={() => void putFeatured(featured.filter((p) => p.id !== project.id))}
+                  onClick={() =>
+                    void putFeatured(
+                      featured.filter((p) => p.id !== project.id),
+                    )
+                  }
                 >
                   Remove
                 </Button>
@@ -200,8 +236,8 @@ function CurationTab({
       <section>
         <h2 className="mb-3 text-[22px]">Slider pins</h2>
         <p className="mb-3 text-[13px] text-body-subtle">
-          Pinned projects (with a cover) lead the landing slideshow; the rest
-          of the slots fill randomly.
+          Pinned projects (with a cover) lead the landing slideshow; the rest of
+          the slots fill randomly.
         </p>
         <ul className="flex flex-col divide-y divide-border-default-subtle">
           {publicProjects.map((project) => (
@@ -276,7 +312,10 @@ function PeopleTab({
           Search
         </Button>
       </form>
-      <ul data-testid="people-list" className="flex flex-col divide-y divide-border-default-subtle">
+      <ul
+        data-testid="people-list"
+        className="flex flex-col divide-y divide-border-default-subtle"
+      >
         {users.map((user) => (
           <li key={user.id} className="flex flex-wrap items-center gap-3 py-2">
             <span className="min-w-0 flex-1">
@@ -295,7 +334,9 @@ function PeopleTab({
               <Button
                 variant="tertiary"
                 disabled={user.id === me.id}
-                title={user.id === me.id ? "You cannot demote yourself" : undefined}
+                title={
+                  user.id === me.id ? "You cannot demote yourself" : undefined
+                }
                 onClick={() => setRole(user, "student")}
               >
                 Demote
@@ -372,9 +413,15 @@ function ModerationTab({
           Search
         </Button>
       </form>
-      <ul data-testid="moderation-list" className="flex flex-col divide-y divide-border-default-subtle">
+      <ul
+        data-testid="moderation-list"
+        className="flex flex-col divide-y divide-border-default-subtle"
+      >
         {projects.map((project) => (
-          <li key={project.id} className="flex flex-wrap items-center gap-3 py-2">
+          <li
+            key={project.id}
+            className="flex flex-wrap items-center gap-3 py-2"
+          >
             <span className="min-w-0 flex-1">
               <Link
                 href={`/projects/${project.id}`}
@@ -394,10 +441,16 @@ function ModerationTab({
               </Badge>
             )}
             <span className="flex gap-2">
-              <Link href={`/dashboard/${project.id}`} className={buttonClass("tertiary")}>
+              <Link
+                href={`/dashboard/${project.id}`}
+                className={buttonClass("tertiary")}
+              >
                 Edit
               </Link>
-              <Button variant="tertiary" onClick={() => toggleVisibility(project)}>
+              <Button
+                variant="tertiary"
+                onClick={() => toggleVisibility(project)}
+              >
                 {project.is_public ? "Hide" : "Show"}
               </Button>
               <Button variant="danger" onClick={() => remove(project)}>

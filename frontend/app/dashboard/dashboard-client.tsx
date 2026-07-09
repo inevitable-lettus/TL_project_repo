@@ -6,7 +6,14 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import type { ProjectListItem } from "@/lib/types";
-import { Badge, Button, Field, inputClass, SysLabel, Window } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Field,
+  inputClass,
+  SysLabel,
+  Window,
+} from "@/components/ui";
 
 export function DashboardClient({
   initialProjects,
@@ -95,7 +102,10 @@ export function DashboardClient({
 
       <Window title="MY_PROJECTS.DIR" bodyClassName="p-3 md:p-4">
         {projects.length > 0 ? (
-          <ul data-testid="my-projects" className="flex flex-col divide-y divide-border-default-subtle">
+          <ul
+            data-testid="my-projects"
+            className="flex flex-col divide-y divide-border-default-subtle"
+          >
             {projects.map((project) => (
               <li
                 key={project.id}

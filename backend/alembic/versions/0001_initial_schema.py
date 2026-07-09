@@ -8,14 +8,14 @@ Create Date: 2026-06-28
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
-
 from alembic import op
+from sqlalchemy.dialects.postgresql import UUID
 
 revision: str = "0001_initial"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
+
 
 def _uuid_pk() -> sa.Column:
     return sa.Column(
@@ -43,9 +43,7 @@ def upgrade() -> None:
         _uuid_pk(),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("email", sa.String(), nullable=False, unique=True),
-        sa.Column(
-            "role", sa.String(), nullable=False, server_default="student"
-        ),
+        sa.Column("role", sa.String(), nullable=False, server_default="student"),
         _created_at(),
     )
 
@@ -84,15 +82,11 @@ def upgrade() -> None:
         sa.Column("object_key", sa.String(), nullable=False, unique=True),
         sa.Column("size", sa.BigInteger(), nullable=False),
         sa.Column("mime_type", sa.String(), nullable=False),
-        sa.Column(
-            "status", sa.String(), nullable=False, server_default="pending"
-        ),
+        sa.Column("status", sa.String(), nullable=False, server_default="pending"),
         _created_at(),
     )
     op.create_index("ix_files_project_id", "files", ["project_id"])
-    op.create_index(
-        "ix_files_status_created_at", "files", ["status", "created_at"]
-    )
+    op.create_index("ix_files_status_created_at", "files", ["status", "created_at"])
 
 
 def downgrade() -> None:

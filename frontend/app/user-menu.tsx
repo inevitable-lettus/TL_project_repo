@@ -37,7 +37,9 @@ export function UserMenu() {
             data-testid="dev-login"
             className={menuLink}
             onClick={() =>
-              api.testLogin("dev@local", "Dev User").then(() => window.location.reload())
+              api
+                .testLogin("dev@local", "Dev User")
+                .then(() => window.location.reload())
             }
           >
             Dev login

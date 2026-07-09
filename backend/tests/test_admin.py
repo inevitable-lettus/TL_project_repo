@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from backend.app.models import Project, User
+from backend.app.models import Project
 from backend.tests.helpers import login, make_client, make_project
 
 
@@ -46,9 +46,10 @@ def test_promote_and_demote(db, staff, student):
     demoted = client.patch(f"/admin/users/{kid['id']}", json={"role": "student"})
     assert demoted.json()["role"] == "student"
 
-    assert client.patch(
-        f"/admin/users/{uuid.uuid4()}", json={"role": "staff"}
-    ).status_code == 404
+    assert (
+        client.patch(f"/admin/users/{uuid.uuid4()}", json={"role": "staff"}).status_code
+        == 404
+    )
 
 
 def test_cannot_demote_self(staff):
@@ -64,18 +65,22 @@ def test_set_featured_ranks_and_clears_previous(db, staff, student):
     b = make_project(db, kid["id"], is_public=True, title="B")
     c = make_project(db, kid["id"], is_public=True, title="C")
 
-    assert client.put(
-        "/admin/featured", json={"project_ids": [str(b.id), str(a.id)]}
-    ).status_code == 200
+    assert (
+        client.put(
+            "/admin/featured", json={"project_ids": [str(b.id), str(a.id)]}
+        ).status_code
+        == 200
+    )
     db.expire_all()
     assert db.get(Project, b.id).featured_rank == 0
     assert db.get(Project, a.id).featured_rank == 1
     assert db.get(Project, c.id).featured_rank is None
 
     # replacing the list clears old ranks
-    assert client.put(
-        "/admin/featured", json={"project_ids": [str(c.id)]}
-    ).status_code == 200
+    assert (
+        client.put("/admin/featured", json={"project_ids": [str(c.id)]}).status_code
+        == 200
+    )
     db.expire_all()
     assert db.get(Project, c.id).featured_rank == 0
     assert db.get(Project, a.id).featured_rank is None
@@ -87,15 +92,24 @@ def test_featured_rejects_private_unknown_and_duplicates(db, staff, student):
     private = make_project(db, kid["id"], is_public=False)
     public = make_project(db, kid["id"], is_public=True)
 
-    assert client.put(
-        "/admin/featured", json={"project_ids": [str(private.id)]}
-    ).status_code == 400
-    assert client.put(
-        "/admin/featured", json={"project_ids": [str(uuid.uuid4())]}
-    ).status_code == 404
-    assert client.put(
-        "/admin/featured", json={"project_ids": [str(public.id), str(public.id)]}
-    ).status_code == 400
+    assert (
+        client.put(
+            "/admin/featured", json={"project_ids": [str(private.id)]}
+        ).status_code
+        == 400
+    )
+    assert (
+        client.put(
+            "/admin/featured", json={"project_ids": [str(uuid.uuid4())]}
+        ).status_code
+        == 404
+    )
+    assert (
+        client.put(
+            "/admin/featured", json={"project_ids": [str(public.id), str(public.id)]}
+        ).status_code
+        == 400
+    )
 
 
 def test_slider_pin_toggle(db, staff, student):
@@ -110,9 +124,12 @@ def test_slider_pin_toggle(db, staff, student):
     db.expire_all()
     assert db.get(Project, public.id).slider_pinned is True
 
-    assert client.patch(
-        f"/admin/projects/{private.id}/slider", json={"pinned": True}
-    ).status_code == 400
+    assert (
+        client.patch(
+            f"/admin/projects/{private.id}/slider", json={"pinned": True}
+        ).status_code
+        == 400
+    )
 
     assert client.patch(
         f"/admin/projects/{public.id}/slider", json={"pinned": False}

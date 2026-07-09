@@ -108,14 +108,16 @@ export function Button({
   );
 }
 
-type BadgeVariant = "brand" | "neutral" | "gray" | "danger" | "success" | "warning";
+type BadgeVariant =
+  "brand" | "neutral" | "gray" | "danger" | "success" | "warning";
 
 const badgeVariants: Record<BadgeVariant, string> = {
   brand: "border-border-brand-subtle bg-brand-softer text-fg-brand-strong",
   neutral: "border-border-default bg-neutral-primary-soft text-heading",
   gray: "border-border-default bg-neutral-secondary-medium text-heading",
   danger: "border-border-danger-subtle bg-danger-soft text-fg-danger-strong",
-  success: "border-border-success-subtle bg-success-soft text-fg-success-strong",
+  success:
+    "border-border-success-subtle bg-success-soft text-fg-success-strong",
   warning: "border-border-warning-subtle bg-warning-soft text-fg-warning",
 };
 

@@ -20,7 +20,10 @@ export default async function Showcase({
 }) {
   const { page: rawPage } = await searchParams;
   const page = Math.max(1, Number(rawPage) || 1);
-  const { items, total } = await api.showcase(PAGE_SIZE, (page - 1) * PAGE_SIZE);
+  const { items, total } = await api.showcase(
+    PAGE_SIZE,
+    (page - 1) * PAGE_SIZE,
+  );
   const covers = await coverUrlMap(items);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
