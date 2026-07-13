@@ -75,9 +75,9 @@ If you're unsure whether your change is safe, ask in the PR before merging — b
 
 Use the **Issues** tab with the provided templates. For anything **security-related**, do **not** open a public issue — see [SECURITY.md](SECURITY.md).
 
-## A note on licensing
+## Licensing
 
-An open-source license for this project hasn't been finalized yet. By contributing you agree that your contribution may be released under whatever license the maintainers choose. If this matters to you, ask before contributing.
+This project is licensed under the [MIT License](LICENSE). By contributing, you agree your contribution is released under the same license.
 
 ## Be kind
 

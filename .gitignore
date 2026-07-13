@@ -20,3 +20,6 @@ backups/
 
 # Design-skill cache artifacts
 .impeccable/
+
+# Claude Code worktrees/session state (can contain per-worktree .env copies)
+.claude/

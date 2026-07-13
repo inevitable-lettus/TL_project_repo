@@ -26,7 +26,7 @@ Examples of unacceptable behavior:
 
 ## Enforcement
 
-If you experience or witness unacceptable behavior, report it privately to the project maintainers. **Add a contact email or channel here before making the repository public.** All reports will be reviewed and handled confidentially.
+If you experience or witness unacceptable behavior, report it privately to the project maintainers at **garv.g@ahduni.edu.in**. All reports will be reviewed and handled confidentially.
 
 Maintainers are responsible for clarifying and enforcing these standards and may remove, edit, or reject contributions or comments that don't align with this Code of Conduct, and may temporarily or permanently ban any contributor for behaviors they deem inappropriate.
 

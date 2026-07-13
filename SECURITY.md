@@ -8,7 +8,7 @@ This app is used for real by the university Tinkerer Laboratory and holds real s
 
 Instead, report it privately:
 
-- Email the project maintainers directly. **Add a security contact email here before making the repository public.**
+- Email the project maintainers directly at **garv.g@ahduni.edu.in**.
 - Or use GitHub's private ["Report a vulnerability"](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability) feature if it's enabled on this repo.
 
 Include as much as you can: what the problem is, how to reproduce it, and what an attacker could do with it. We'll confirm we received your report, work on a fix, and credit you if you'd like.
