@@ -450,6 +450,77 @@ The operational safety net, plus a real performance fix:
 - Bucket CORS turned out unnecessary: browser, API, and file storage all
   share one origin through nginx.
 
+## v1.1 (started 2026-07-08)
+
+Two tracks (details in handoff.md): **A** — visual/UX pass plus small
+"thumbnail" copies of cover images (generated in the browser before upload,
+so pages stop downloading full-size photos just to draw a card); **B** — lab
+operations to outdo the admin's Sheets-based platform: machine directory with
+live status edited in a Google Sheet, machine slot booking, tool checkout,
+issue reporting — all with real login instead of typed-in emails.
+
+- **Phase A1**: the editor always capped descriptions at 500 characters but
+  the backend accepted 2000 — now both agree on 500. Also fixed: an empty
+  `frontend/public/` folder wasn't tracked by git, so a fresh clone couldn't
+  build the frontend image (git only tracks files, not folders — a `.gitkeep`
+  placeholder file fixes it).
+- **Phase A2**: the database can now remember a small "thumbnail" copy of a
+  project's cover image (new column + a new file kind `thumb`). The thumbnail
+  is just another stored file, so all the existing safety nets (size limits,
+  orphan cleanup, delete-purges-storage) apply automatically. Setting a new
+  thumbnail deletes the old one so replaced copies don't pile up against a
+  student's storage quota.
+- **Phase B8 (wrap)**: the demo seed now also creates sample bookings, tool
+  checkouts (one deliberately overdue), an open issue, and small thumbnail
+  copies of covers. The README was rewritten for the Docker-based setup.
+  GitHub Actions CI now boots the whole stack and runs every backend test
+  and browser journey on each push/PR — before this, tests only ran when
+  someone remembered to run them. Verified from absolute zero: wipe all
+  data, rebuild, migrate, seed — 76 backend tests + 24 browser journeys
+  pass.
+- **Phase B7**: tool checkout and issue reporting. A "Tools" page logs what
+  leaves the lab (tool, quantity, return-by date) and lets you mark it
+  returned; staff see everything still out with overdue items flagged red.
+  A "Report an issue" form (linked from the machines page) files equipment
+  or safety reports with a severity; staff triage and resolve them from the
+  admin dashboard, and urgent reports email all staff if mail is configured.
+- **Phase B6**: machine booking. Students pick a machine, a day (up to 30
+  days ahead), and a start slot on an hour grid — taken slots show up
+  disabled because the browser asks the server which times are busy (times
+  only; no names leak). Requests start as "pending"; staff approve or reject
+  from a new admin tab, and two overlapping requests can never both be
+  approved (the database serializes decisions per machine-day). Everyone
+  sees their own bookings on the dashboard and can cancel. All the rules
+  (hours, slot length, 4-hour cap, booking window) are environment settings,
+  not code. If mail credentials are configured the decision is emailed;
+  without them everything still works. This beats the reference platform's
+  booking because identity comes from real Google login, not a typed email.
+- **Phase B5**: the site now has a public "Machines" page listing lab
+  equipment by category with a live status chip (available / in use /
+  maintenance / offline) and a training-required marker. The clever bit:
+  the machine list isn't in our database — staff keep it in a Google Sheet
+  published as CSV, and the backend re-reads it every couple of minutes.
+  Editing a spreadsheet cell updates the site; no deploy, no admin screen.
+  If the sheet is unreachable the backend serves the last copy it saw.
+  Local dev uses a demo CSV file shipped with the frontend.
+- **Phase A4**: the public pages got their storytelling pass. The landing now
+  opens with a "README.TXT" window (big serif headline + what-this-is line +
+  two buttons) before the slideshow, and the featured section leads with one
+  big staff-pick card instead of a flat grid. Project pages open on the
+  full-size cover photo like a magazine article; downloads read like a file
+  manager listing. Cards lift slightly on hover, profiles show bigger
+  avatars and chip-style program labels. Everything stays inside the
+  existing "nostalgia" design tokens — no new colors were invented — and
+  animations respect the system "reduce motion" setting.
+- **Phase A3**: when a student picks a cover, their own browser now shrinks
+  the image (max 1280px, WebP) and uploads that small copy alongside —
+  project cards and the landing slider load the small copy instead of the
+  full-size photo, so pages feel much lighter. Old projects without a copy
+  keep working (they fall back to the original). Avatars get the same
+  treatment (shrunk to 512px before upload). The server never touches image
+  bytes — the shrinking happens entirely in the browser, so the "backend
+  never streams files" rule holds.
+
 ### Opening the repo to student contributors (2026-07-09)
 Groundwork so other students can contribute, most of them using their own AI
 assistants to write code. The key idea: **you can't trust prose to keep code

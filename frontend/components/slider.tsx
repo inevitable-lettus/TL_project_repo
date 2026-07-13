@@ -54,7 +54,7 @@ export function Slider({ slides }: { slides: Slide[] }) {
           aria-hidden={i !== index}
           tabIndex={i === index ? 0 : -1}
           data-testid={i === index ? "slider-active" : undefined}
-          className={`absolute inset-0 transition-opacity duration-700 ${
+          className={`absolute inset-0 transition-opacity duration-700 motion-reduce:transition-none ${
             i === index ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
@@ -65,11 +65,11 @@ export function Slider({ slides }: { slides: Slide[] }) {
             alt={slide.title}
             className="size-full object-cover"
           />
-          <span className="absolute inset-x-0 bottom-0 flex items-baseline justify-between gap-3 border-t border-border-default bg-menu-bar/95 px-4 py-2.5">
-            <span className="truncate font-serif text-lg font-medium text-heading">
+          <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 border-t border-border-default bg-menu-bar/95 px-4 py-3 md:px-5">
+            <span className="truncate font-serif text-lg font-medium text-heading md:text-2xl">
               {slide.title}
             </span>
-            <span className="shrink-0 font-mono text-[12px] tracking-[0.4px] text-body-subtle">
+            <span className="shrink-0 rounded-base border border-border-default bg-neutral-primary-soft px-2 py-0.5 font-mono text-[11px] tracking-[0.4px] text-body-subtle">
               {slide.ownerName}
             </span>
           </span>

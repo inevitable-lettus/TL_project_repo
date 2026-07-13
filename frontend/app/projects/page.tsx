@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ProjectCard } from "@/components/project-card";
 import { SysLabel, Window } from "@/components/ui";
-import { api, coverUrlMap } from "@/lib/api";
+import { api, coverIdFor, coverUrlMap } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Browse — Tinkerer Lab" };
 
@@ -29,9 +29,14 @@ export default async function Showcase({
 
   return (
     <Window title="ALL_PROJECTS.DIR" floating>
-      <div className="mb-5 flex items-baseline justify-between gap-3">
-        <h1 className="text-[26px] md:text-[32px]">Browse projects</h1>
-        <SysLabel>{total} TOTAL</SysLabel>
+      <div className="mb-6 border-b border-border-default-subtle pb-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <h1 className="text-[26px] md:text-[32px]">The archive</h1>
+          <SysLabel>{total} PROJECTS_ON_FILE</SysLabel>
+        </div>
+        <p className="mt-2 max-w-[55ch] text-[15px] leading-[1.65] text-body-subtle">
+          Every public build from the lab, newest first.
+        </p>
       </div>
       {items.length > 0 ? (
         <div
@@ -42,7 +47,7 @@ export default async function Showcase({
             <ProjectCard
               key={p.id}
               project={p}
-              coverUrl={p.cover_file_id ? covers[p.cover_file_id] : undefined}
+              coverUrl={covers[coverIdFor(p) ?? ""]}
             />
           ))}
         </div>

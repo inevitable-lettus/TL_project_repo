@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { formatBytes } from "@/lib/format";
+import { downscaleImage } from "@/lib/image";
 import type { FileInfo } from "@/lib/types";
 import {
   uploadErrorMessage,
@@ -173,6 +174,7 @@ export function CoverPicker({
   initialCoverId: string | null;
 }) {
   const [coverId, setCoverId] = useState(initialCoverId);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const images = mediaFiles.filter(
     (f) =>
@@ -181,13 +183,44 @@ export function CoverPicker({
       f.mime_type.startsWith("image/"),
   );
 
+  // Downscale the picked image and upload the copy as a "thumb" file so
+  // cards/slider stop loading the full-size original. Returns null when the
+  // browser can't decode the format — the cover then serves cards directly.
+  const makeThumb = async (fileId: string): Promise<string | null> => {
+    const media = await resolveMedia(fileId);
+    const original = await (await fetch(media.url)).blob();
+    let small: Blob;
+    try {
+      small = await downscaleImage(original, 1280);
+    } catch {
+      return null;
+    }
+    const thumbFile = new File([small], "cover-thumb.webp", {
+      type: "image/webp",
+    });
+    const ready = await uploadProjectFile(
+      projectId,
+      thumbFile,
+      "thumb",
+      () => {},
+    );
+    return ready.id;
+  };
+
   const pick = async (fileId: string | null) => {
     setError(null);
+    setBusy(true);
     try {
-      await api.updateProject(projectId, { cover_file_id: fileId });
+      const thumbId = fileId === null ? null : await makeThumb(fileId);
+      await api.updateProject(projectId, {
+        cover_file_id: fileId,
+        cover_thumb_file_id: thumbId,
+      });
       setCoverId(fileId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "cover update failed");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -196,7 +229,7 @@ export function CoverPicker({
       title="COVER.PICK"
       titleBarExtra={
         coverId ? (
-          <Button variant="tertiary" onClick={() => pick(null)}>
+          <Button variant="tertiary" disabled={busy} onClick={() => pick(null)}>
             Remove cover
           </Button>
         ) : undefined
@@ -213,7 +246,9 @@ export function CoverPicker({
               key={file.id}
               file={file}
               isCover={file.id === coverId}
-              onPick={() => pick(file.id)}
+              onPick={() => {
+                if (!busy) void pick(file.id);
+              }}
             />
           ))}
         </div>

@@ -1,5 +1,14 @@
 import type {
+  AdminBooking,
+  AdminCheckout,
+  AdminIssue,
+  Booking,
+  Checkout,
+  Issue,
+  BookingRules,
+  DaySlot,
   DownloadUrl,
+  Machine,
   Profile,
   ProjectDetail,
   ProjectListItem,
@@ -83,6 +92,60 @@ export const api = {
   deleteProject: (id: string) =>
     request<{ status: string }>(`/projects/${id}`, { method: "DELETE" }),
 
+  machines: () => request<Machine[]>("/machines"),
+
+  bookingRules: () => request<BookingRules>("/bookings/rules"),
+  bookingDay: (machine: string, date: string) =>
+    request<DaySlot[]>(
+      `/bookings/day?machine=${encodeURIComponent(machine)}&date=${date}`,
+    ),
+  createBooking: (body: {
+    machine_slug: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    purpose: string;
+  }) => request<Booking>("/bookings", { method: "POST", body }),
+  myBookings: (cookie?: string) =>
+    request<Booking[]>("/bookings/mine", { cookie }),
+  cancelBooking: (id: string) =>
+    request<Booking>(`/bookings/${id}/cancel`, { method: "POST" }),
+  adminBookings: (status = "", cookie?: string) =>
+    request<AdminBooking[]>(`/admin/bookings?status=${status}`, { cookie }),
+  adminDecideBooking: (id: string, status: "approved" | "rejected") =>
+    request<AdminBooking>(`/admin/bookings/${id}`, {
+      method: "PATCH",
+      body: { status },
+    }),
+
+  toolCategories: () => request<string[]>("/checkouts/categories"),
+  createCheckout: (body: {
+    category: string;
+    tool_name: string;
+    quantity: number;
+    due_date: string;
+  }) => request<Checkout>("/checkouts", { method: "POST", body }),
+  myCheckouts: (cookie?: string) =>
+    request<Checkout[]>("/checkouts/mine", { cookie }),
+  returnCheckout: (id: string) =>
+    request<Checkout>(`/checkouts/${id}/return`, { method: "POST" }),
+  adminCheckouts: (status = "out", cookie?: string) =>
+    request<AdminCheckout[]>(`/admin/checkouts?status=${status}`, { cookie }),
+
+  createIssue: (body: {
+    machine_slug: string | null;
+    type: Issue["type"];
+    severity: Issue["severity"];
+    description: string;
+  }) => request<Issue>("/issues", { method: "POST", body }),
+  adminIssues: (status = "open", cookie?: string) =>
+    request<AdminIssue[]>(`/admin/issues?status=${status}`, { cookie }),
+  adminSetIssueStatus: (id: string, status: "open" | "resolved") =>
+    request<AdminIssue>(`/admin/issues/${id}`, {
+      method: "PATCH",
+      body: { status },
+    }),
+
   profile: (id: string, cookie?: string) =>
     request<Profile>(`/users/${id}`, { cookie }),
   updateMe: (body: Record<string, unknown>) =>
@@ -94,7 +157,7 @@ export const api = {
       filename: string;
       size: number;
       mime_type: string;
-      kind: "media" | "attachment";
+      kind: "media" | "attachment" | "thumb";
     },
   ) =>
     request<UploadSlot>(`/projects/${projectId}/files`, {
@@ -143,14 +206,25 @@ export const api = {
     }),
 };
 
+type HasCover = {
+  cover_file_id: string | null;
+  cover_thumb_file_id: string | null;
+};
+
+// Cards and the slider prefer the small browser-generated thumb; older
+// projects without one fall back to the full-size cover.
+export function coverIdFor(project: HasCover): string | null {
+  return project.cover_thumb_file_id ?? project.cover_file_id;
+}
+
 // Resolve cover images for a list of projects: file id → fresh presigned URL.
 // Presigning is cheap (local HMAC in the backend), so parallel per-cover calls
 // are fine at this scale.
 export async function coverUrlMap(
-  projects: { cover_file_id: string | null }[],
+  projects: HasCover[],
   cookie?: string,
 ): Promise<Record<string, string>> {
-  const ids = [...new Set(projects.flatMap((p) => p.cover_file_id ?? []))];
+  const ids = [...new Set(projects.flatMap((p) => coverIdFor(p) ?? []))];
   const entries = await Promise.all(
     ids.map(
       async (id) => [id, (await api.downloadUrl(id, cookie)).url] as const,

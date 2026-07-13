@@ -31,6 +31,7 @@ class ProjectListItem(BaseModel):
     description: str | None
     is_public: bool
     cover_file_id: uuid.UUID | None
+    cover_thumb_file_id: uuid.UUID | None
     featured_rank: int | None
     slider_pinned: bool
     owner_id: uuid.UUID

@@ -36,6 +36,30 @@ The **landing page** is the shop window: a large auto-advancing image slider (ad
 - View any student's profile page (only their public projects show).
 - Never see private projects (they don't appear and can't be opened).
 
+## Lab operations (v1.1 Track B — in progress)
+
+Feature target: match and beat the admin's Sheets-based platform
+(https://vrucando.github.io/tinkers-lab-platform/) with real login (Google
+OAuth, not typed-in emails) and transactional data in Postgres.
+
+**Student**
+- See the lab's machines, grouped by category, with live status (available /
+  in use / maintenance / offline) and whether training is required.
+- Book a machine time slot (within lab hours, bounded duration/advance
+  window); see my bookings and their pending/approved/rejected state; cancel.
+- Log a tool out with a due date and mark it returned.
+- Report a broken machine or safety issue with a severity.
+
+**Staff**
+- Update machine status/details by editing a Google Sheet — no deploy, no
+  admin UI (the one piece of content that lives outside Postgres, because it
+  changes daily and staff already live in Sheets).
+- Approve/reject bookings, see the overdue-checkout list, and triage issues
+  from the admin dashboard.
+
+Email notifications (booking confirmations, overdue reminders, urgent-issue
+alerts) are optional behind SMTP env config — every flow works without them.
+
 ## Out of scope for v1 (explicit — do not assume these)
 
 - File versioning / history.

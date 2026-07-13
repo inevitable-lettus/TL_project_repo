@@ -1,6 +1,6 @@
 # Tinkerer Lab
 
-A website where a university makerspace's students and staff store and show off their projects. Each project is a blog-style page (text, photos, videos, and downloadable files); each student has a profile page; staff pick what appears on the landing page. Some projects can be marked private so the public can't see them.
+A website where a university makerspace's students and staff store and show off their projects. Each project is a blog-style page (text, photos, videos, and downloadable files); each student has a profile page; staff pick what appears on the landing page. Some projects can be marked private so the public can't see them. It also runs the lab's day-to-day operations: a machines directory with live status, machine slot booking, tool checkout, and issue reporting.
 
 **This is a real system used by the university Tinkerer Laboratory.** That means security and reliability matter — please read the rules before contributing (links below).
 
@@ -25,11 +25,18 @@ docker compose exec backend alembic -c backend/alembic.ini upgrade head   # set 
 docker compose exec backend python -m backend.app.seed                    # add sample projects (optional)
 ```
 
-Then open **http://localhost/** in your browser.
+Then open **http://localhost/** in your browser (API health: `http://localhost/api/health`).
 
 To log in locally without Google, click the **Dev login** button (it only appears in development). Full step-by-step instructions, including how to install Docker and what to do when something breaks, are in **[docs/setup.md](docs/setup.md)**.
 
-To stop everything: `docker compose down` (add `-v` to also erase the database and files).
+To stop everything: `docker compose down` (add `-v` to also erase the database and files). Rebuild images after code changes (`docker compose up -d --build backend frontend`) — containers run baked images, not mounted source.
+
+## Tests
+
+```bash
+docker compose exec backend pytest      # backend suite
+cd frontend && npm ci && npm run e2e    # Playwright journeys (needs test-mode env vars — see handoff.md)
+```
 
 ## Want to contribute?
 

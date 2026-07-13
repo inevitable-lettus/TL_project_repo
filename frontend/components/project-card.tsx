@@ -15,7 +15,7 @@ export function ProjectCard({
 }) {
   return (
     <Link href={`/projects/${project.id}`} className="group block">
-      <article className="overflow-hidden rounded-base border border-border-default bg-neutral-primary-soft transition-colors duration-[120ms] group-hover:border-border-default-strong">
+      <article className="overflow-hidden rounded-base border border-border-default bg-neutral-primary-soft transition-[transform,border-color,box-shadow] duration-[120ms] group-hover:-translate-y-0.5 group-hover:border-border-default-strong group-hover:shadow-menu group-active:translate-y-0 group-active:shadow-press motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
         <header className="flex h-8 items-center gap-2 border-b border-border-default bg-menu-bar px-3">
           <span className="truncate text-[13px] font-semibold text-heading">
             {project.title}
@@ -41,6 +41,11 @@ export function ProjectCard({
           <div className="grid aspect-[4/3] w-full place-items-center bg-neutral-secondary-soft">
             <SysLabel>NO_COVER.IMG</SysLabel>
           </div>
+        )}
+        {project.description && (
+          <p className="line-clamp-2 border-t border-border-default-subtle px-3 py-2 text-[13px] leading-[1.5] text-body-subtle">
+            {project.description}
+          </p>
         )}
         <div className="flex items-center justify-between gap-2 border-t border-border-default px-3 py-2 transition-colors duration-[120ms] group-hover:bg-neutral-secondary-medium">
           <span className="truncate text-[13px] text-body">

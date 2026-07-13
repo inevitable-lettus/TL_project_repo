@@ -58,11 +58,18 @@ export default async function ProjectPage({
     (f) => f.kind === "attachment" && f.status === "ready",
   );
 
+  // The article opens on the full-size cover (not the card thumb) —
+  // presigned per render like every other fetch.
+  const coverUrl = project.cover_file_id
+    ? (await api.downloadUrl(project.cover_file_id, cookie)).url
+    : null;
+
   return (
     <div className="mx-auto flex max-w-[760px] flex-col gap-8">
       <Window
         title={`${project.title}.TXT`}
         floating
+        bodyClassName="p-0"
         titleBarExtra={
           canEdit ? (
             <Link
@@ -76,46 +83,58 @@ export default async function ProjectPage({
         }
       >
         <article data-testid="project-article">
-          <header className="mb-6 border-b border-border-default-subtle pb-5">
-            <div className="flex items-start justify-between gap-3">
-              <h1>{project.title}</h1>
-              {!project.is_public && (
-                <Badge variant="warning" mono>
-                  private
-                </Badge>
+          {coverUrl && (
+            // Presigned URL — must not go through the Next image optimizer.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverUrl}
+              alt=""
+              className="max-h-[440px] w-full border-b border-border-default object-cover"
+            />
+          )}
+          <div className="p-5 md:p-8">
+            <header className="mb-6 border-b border-border-default-subtle pb-5">
+              <h1 className="text-balance">{project.title}</h1>
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <Link
+                  href={`/users/${project.owner_id}`}
+                  className="text-[14px] font-medium text-fg-brand underline hover:no-underline"
+                >
+                  {project.owner_name}
+                </Link>
+                <span aria-hidden className="text-body-subtle">
+                  ·
+                </span>
+                <SysLabel>{formatDate(project.created_at)}</SysLabel>
+                {!project.is_public && (
+                  <Badge variant="warning" mono>
+                    private
+                  </Badge>
+                )}
+              </div>
+              {project.description && (
+                <p className="mt-4 text-lg leading-[1.65] text-body">
+                  {project.description}
+                </p>
               )}
-            </div>
-            <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <Link
-                href={`/users/${project.owner_id}`}
-                className="text-[14px] font-medium text-fg-brand underline hover:no-underline"
-              >
-                {project.owner_name}
-              </Link>
-              <SysLabel>{formatDate(project.created_at)}</SysLabel>
-            </div>
-            {project.description && (
-              <p className="mt-4 text-lg leading-[1.65]">
-                {project.description}
+            </header>
+            {project.content ? (
+              <TipTapRender
+                doc={project.content}
+                mediaUrls={mediaUrls}
+                files={project.files}
+              />
+            ) : (
+              <p className="text-[15px] leading-[1.65] text-body-subtle">
+                No write-up yet.
               </p>
             )}
-          </header>
-          {project.content ? (
-            <TipTapRender
-              doc={project.content}
-              mediaUrls={mediaUrls}
-              files={project.files}
-            />
-          ) : (
-            <p className="text-[15px] leading-[1.65] text-body-subtle">
-              No write-up yet.
-            </p>
-          )}
+          </div>
         </article>
       </Window>
 
       {attachments.length > 0 && (
-        <Window title="DOWNLOADS.DIR">
+        <Window title={`DOWNLOADS.DIR (${attachments.length})`}>
           <Downloads files={attachments} />
         </Window>
       )}

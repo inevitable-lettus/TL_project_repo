@@ -44,6 +44,19 @@ def test_create_requires_auth_and_defaults_private(db, owner):
     assert db.get(Project, uuid.UUID(body["id"])) is not None
 
 
+def test_description_length_capped_at_500(db, owner):
+    client, user = owner
+    ok = client.post("/projects", json={"title": "Cap", "description": "d" * 500})
+    assert ok.status_code == 200
+
+    too_long = client.post("/projects", json={"title": "Cap", "description": "d" * 501})
+    assert too_long.status_code == 422
+
+    project = make_project(db, user["id"])
+    patched = client.patch(f"/projects/{project.id}", json={"description": "d" * 501})
+    assert patched.status_code == 422
+
+
 def test_showcase_lists_public_only_with_pagination(db, owner):
     client, user = owner
     for i in range(3):
@@ -172,12 +185,64 @@ def test_cover_must_be_own_ready_file(db, owner):
     )
 
 
+def test_cover_thumb_must_be_own_ready_thumb_file(db, owner):
+    client, user = owner
+    project = make_project(db, user["id"], is_public=True)
+    other_project = make_project(db, user["id"], is_public=True)
+    thumb = full_upload(client, project.id, b"thumb", kind="thumb")
+    media = full_upload(client, project.id, b"img", kind="media")
+    foreign_thumb = full_upload(client, other_project.id, b"x", kind="thumb")
+
+    url = f"/projects/{project.id}"
+    ok = client.patch(url, json={"cover_thumb_file_id": thumb["id"]})
+    assert ok.status_code == 200
+    assert ok.json()["cover_thumb_file_id"] == thumb["id"]
+    assert (
+        client.patch(url, json={"cover_thumb_file_id": media["id"]}).status_code == 400
+    )
+    assert (
+        client.patch(url, json={"cover_thumb_file_id": foreign_thumb["id"]}).status_code
+        == 400
+    )
+    assert (
+        client.patch(url, json={"cover_thumb_file_id": str(uuid.uuid4())}).status_code
+        == 400
+    )
+
+
+def test_replacing_cover_thumb_purges_old_object_and_row(db, owner):
+    client, user = owner
+    project = make_project(db, user["id"], is_public=True)
+    url = f"/projects/{project.id}"
+
+    old = full_upload(client, project.id, b"old-thumb", kind="thumb")
+    assert client.patch(url, json={"cover_thumb_file_id": old["id"]}).status_code == 200
+    old_key = db.get(File, uuid.UUID(old["id"])).object_key
+
+    new = full_upload(client, project.id, b"new-thumb", kind="thumb")
+    assert client.patch(url, json={"cover_thumb_file_id": new["id"]}).status_code == 200
+
+    db.expire_all()
+    assert db.get(File, uuid.UUID(old["id"])) is None
+    with pytest.raises(Exception, match="NoSuchKey"):
+        storage.stat_object(old_key)
+
+    # clearing the thumb purges it too
+    assert client.patch(url, json={"cover_thumb_file_id": None}).status_code == 200
+    db.expire_all()
+    assert db.get(File, uuid.UUID(new["id"])) is None
+    assert db.get(Project, project.id).cover_thumb_file_id is None
+
+
 def test_delete_purges_objects_then_rows(db, owner):
     client, user = owner
     project = make_project(db, user["id"], is_public=False)
     project_id = project.id
     ready = full_upload(client, project_id, b"purge")
+    thumb = full_upload(client, project_id, b"thumb", kind="thumb")
+    client.patch(f"/projects/{project_id}", json={"cover_thumb_file_id": thumb["id"]})
     object_key = db.get(File, uuid.UUID(ready["id"])).object_key
+    thumb_key = db.get(File, uuid.UUID(thumb["id"])).object_key
 
     stranger = make_client()
     login(stranger, "stranger@uni.edu")
@@ -187,6 +252,11 @@ def test_delete_purges_objects_then_rows(db, owner):
     db.expunge_all()
     assert db.get(Project, project_id) is None
     assert db.get(File, uuid.UUID(ready["id"])) is None
+    assert db.get(File, uuid.UUID(thumb["id"])) is None
+    with pytest.raises(Exception, match="NoSuchKey"):
+        storage.stat_object(object_key)
+    with pytest.raises(Exception, match="NoSuchKey"):
+        storage.stat_object(thumb_key)
     with pytest.raises(Exception, match="NoSuchKey"):
         storage.stat_object(object_key)
 

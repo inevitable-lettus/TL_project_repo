@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { downscaleImage } from "@/lib/image";
 import type { Profile } from "@/lib/types";
 import {
   uploadAvatar,
@@ -52,7 +53,16 @@ export function SettingsForm({
   const changeAvatar = async (file: File) => {
     setAvatarError(null);
     try {
-      const ready = await uploadAvatar(file, setAvatarState);
+      // Avatars render at ~96px — downscale before upload. Undecodable
+      // formats upload as-is; the backend still enforces an image mime.
+      let toUpload = file;
+      try {
+        const small = await downscaleImage(file, 512);
+        toUpload = new File([small], "avatar.webp", { type: "image/webp" });
+      } catch {
+        toUpload = file;
+      }
+      const ready = await uploadAvatar(toUpload, setAvatarState);
       await api.updateMe({ avatar_file_id: ready.id });
       setAvatarUrl((await api.downloadUrl(ready.id)).url);
     } catch (error) {
