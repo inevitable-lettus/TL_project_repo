@@ -14,7 +14,7 @@ export function UploadMeter({
     return (
       <p
         data-testid="upload-error"
-        className="rounded-base border border-border-danger-subtle bg-danger-soft px-2.5 py-1.5 font-mono text-[12px] text-fg-danger-strong"
+        className="rounded-base border-2 border-border-danger bg-danger-soft px-2.5 py-1.5 font-mono text-xs font-bold text-fg-danger-strong"
         role="alert"
       >
         {error}
@@ -29,12 +29,12 @@ export function UploadMeter({
   return (
     <div
       data-testid="upload-meter"
-      className="rounded-base border border-border-default bg-neutral-secondary-soft px-2.5 py-1.5"
+      className="rounded-base border-2 border-border-default-strong bg-neutral-secondary-soft px-2.5 py-1.5"
     >
-      <span className="font-mono text-[12px] tracking-[0.4px] text-body-subtle">
+      <span className="font-mono text-xs tracking-[0.1em] text-body-subtle">
         {label}
       </span>
-      <div className="mt-1 h-1.5 overflow-hidden rounded-full border border-border-default bg-neutral-secondary-medium">
+      <div className="mt-1.5 h-2 overflow-hidden border border-border-default-strong bg-neutral-secondary-medium">
         <div
           className="h-full bg-brand transition-[width] duration-150"
           style={{

@@ -2,12 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { menuLink } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import type { User } from "@/lib/types";
-
-const menuLink =
-  "rounded-base px-2.5 py-1 text-[13px] font-medium text-heading " +
-  "transition-colors duration-[120ms] hover:bg-neutral-secondary-medium";
 
 export function UserMenu() {
   const [user, setUser] = useState<User | null>(null);

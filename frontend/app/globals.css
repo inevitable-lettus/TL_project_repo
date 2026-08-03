@@ -1,135 +1,149 @@
 @import "tailwindcss";
 
-/* Nostalgia design-system tokens (.claude/skills/nostalgia). Light values in
-   :root, dark overrides via prefers-color-scheme — components never swap
-   colors manually. */
+/* Tinkerers' Lab blueprint-industrial tokens. Light values in :root, dark
+   overrides via prefers-color-scheme — components never swap colors manually.
+   Token names are stable; only their values carry the visual identity. */
 :root {
-  --neutral-primary-soft: #ffeedd;
-  --neutral-secondary-soft: #f6e6d6;
-  --neutral-secondary: #e5d4c5;
-  --neutral-secondary-medium: #dbc8b6;
-  --neutral-secondary-strong: #cdb7a1;
+  --neutral-primary-soft: #fdfdfd;
+  --neutral-secondary-soft: #f3f5fa;
+  --neutral-secondary: #e7ebf3;
+  --neutral-secondary-medium: #dde3ee;
+  --neutral-secondary-strong: #cbd4e3;
 
-  --bg-desktop: #ff631a;
-  --menu-bar: #e5d4c5;
-  --button-primary: #3f1400;
-  --button-secondary: #9d3200;
-  --code-bg: #2b1b11;
-  --code-text: #ffe6d1;
-  --disabled: #e5d4c5;
+  --bg-desktop: #e6ebf3;
+  --menu-bar: #f2f4fa;
+  --button-primary: #1a1a1a;
+  --button-secondary: #0041c8;
+  --code-bg: #14161c;
+  --code-text: #e6ebf3;
+  --disabled: #e7ebf3;
 
-  --brand: #ff631a;
-  --brand-softer: #fff1eb;
-  --brand-soft: #ffd2b8;
-  --brand-strong: #d94a00;
-  --success-soft: #e2f4db;
-  --success: #2f6c2d;
-  --success-strong: #1f4f1d;
-  --danger-soft: #fff1eb;
-  --danger: #b0300a;
-  --danger-strong: #7a2200;
-  --warning-soft: #ffefd6;
-  --warning: #c2410c;
-  --warning-strong: #8a4a08;
+  --brand: #0041c8;
+  --brand-softer: #eef1ff;
+  --brand-soft: #dce1ff;
+  --brand-strong: #0033a0;
+  --success-soft: #dff5e7;
+  --success: #136c3a;
+  --success-strong: #0d4f29;
+  --danger-soft: #fdeceb;
+  --danger: #b3261e;
+  --danger-strong: #8c1d17;
+  --warning-soft: #ffeee5;
+  --warning: #a33800;
+  --warning-strong: #7d2b00;
 
-  --button-primary-text: #fff6ee;
-  --button-primary-hover: #ff631a;
+  --button-primary-text: #fdfdfd;
+  --button-primary-hover: #0041c8;
 
-  --cream: #fff6ee;
-  --espresso: #381c00;
-  --heading: #381c00;
-  --body: #4a3826;
-  --body-subtle: #6c5945;
-  --fg-brand: #9d3200;
-  --fg-brand-strong: #7a2200;
-  --fg-danger: #7a2200;
-  --fg-danger-strong: #5a1800;
-  --fg-success: #2f6c2d;
-  --fg-success-strong: #1f4f1d;
-  --fg-warning: #8a4a08;
-  --fg-disabled: #a8917c;
+  --cream: #fdfdfd;
+  --espresso: #1a1a1a;
+  --heading: #14161c;
+  --body: #2f3340;
+  --body-subtle: #5a6070;
+  --fg-brand: #0037ab;
+  --fg-brand-strong: #002d8c;
+  --fg-danger: #8c1d17;
+  --fg-danger-strong: #6b1611;
+  --fg-success: #0d4f29;
+  --fg-success-strong: #083a1e;
+  --fg-warning: #7d2b00;
+  --fg-disabled: #7c8496;
 
-  --border-default: #8d6c5d;
-  --border-default-subtle: #c3a98e;
-  --border-default-strong: #3f1400;
-  --border-muted: #eadac9;
-  --border-brand: #ff631a;
-  --border-brand-subtle: #ffd2b8;
-  --border-danger: #b0300a;
-  --border-danger-subtle: #f6ddd2;
-  --border-success: #2f6c2d;
-  --border-success-subtle: #cdeac4;
-  --border-warning: #c2410c;
-  --border-warning-subtle: #fbe3c0;
+  --border-default: #8792ab;
+  --border-default-subtle: #ccd4e2;
+  --border-default-strong: #1a1a1a;
+  --border-muted: #eef1f7;
+  --border-brand: #0041c8;
+  --border-brand-subtle: #b6c4ff;
+  --border-danger: #b3261e;
+  --border-danger-subtle: #f5c9c6;
+  --border-success: #136c3a;
+  --border-success-subtle: #a9dfc0;
+  --border-warning: #a33800;
+  --border-warning-subtle: #ffd0b8;
 
-  --shadow-window:
-    0 4px 10px rgba(56, 28, 0, 0.18), 0 20px 38px rgba(56, 28, 0, 0.28);
-  --shadow-menu: 0 5px 16px rgba(56, 28, 0, 0.15);
-  --inset-press: inset 0 2px 4px rgba(56, 28, 0, 0.28);
+  /* Fixed across both modes: the lab's ink, its on-ink text, and the
+     safety-yellow accent. Yellow is a FILL only — yellow text on a light
+     surface fails contrast; pair it with ink, or use it on the ink footer. */
+  --ink: #1a1a1a;
+  --on-ink: #fdfdfd;
+  --safety-yellow: #ffd600;
+  --blueprint-line: #c3cddf;
+
+  /* Hard offset shadows — the identity's signature. Not blur, not spread. */
+  --shadow-ink: #1a1a1a;
+  --shadow-window: 4px 4px 0 0 var(--shadow-ink);
+  --shadow-menu: 2px 2px 0 0 var(--shadow-ink);
+  --shadow-hard-primary: 4px 4px 0 0 var(--brand);
+  --shadow-hard-yellow: 4px 4px 0 0 var(--safety-yellow);
+  --inset-press: inset 2px 2px 0 0 rgb(26 26 26 / 0.18);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --neutral-primary-soft: #221811;
-    --neutral-secondary-soft: #2a1e15;
-    --neutral-secondary: #30231b;
-    --neutral-secondary-medium: #3a2a1f;
-    --neutral-secondary-strong: #463225;
+    --neutral-primary-soft: #1a1d26;
+    --neutral-secondary-soft: #22262f;
+    --neutral-secondary: #2a2f3a;
+    --neutral-secondary-medium: #333947;
+    --neutral-secondary-strong: #414859;
 
-    --bg-desktop: #7f492f;
-    --menu-bar: #30231b;
-    --button-primary: #ff9a63;
-    --button-secondary: #be7247;
-    --code-bg: #130d09;
-    --code-text: #ead7c4;
-    --disabled: #30231b;
+    --bg-desktop: #0e1016;
+    --menu-bar: #22262f;
+    --button-primary: #b6c4ff;
+    --button-secondary: #6b85ff;
+    --code-bg: #08090d;
+    --code-text: #d3d9e6;
+    --disabled: #2a2f3a;
 
-    --brand: #ff9a63;
-    --brand-softer: #2e1c12;
-    --brand-soft: #3c2519;
-    --brand-strong: #ffb07e;
-    --success-soft: #182a14;
-    --success: #6fbf6a;
-    --success-strong: #98e2a8;
-    --danger-soft: #2e1410;
-    --danger: #ff8f7e;
-    --danger-strong: #ffb0a3;
-    --warning-soft: #2e2110;
-    --warning: #e5a85a;
-    --warning-strong: #f0c58a;
+    --brand: #b6c4ff;
+    --brand-softer: #1b2030;
+    --brand-soft: #26304d;
+    --brand-strong: #d5ddff;
+    --success-soft: #12291c;
+    --success: #5fd18d;
+    --success-strong: #8fe6b0;
+    --danger-soft: #2e1512;
+    --danger: #ff8a80;
+    --danger-strong: #ffb4ad;
+    --warning-soft: #2e1c10;
+    --warning: #ff9a63;
+    --warning-strong: #ffb98e;
 
-    --button-primary-text: #381c00;
-    --button-primary-hover: #ffb07e;
+    --button-primary-text: #0e1016;
+    --button-primary-hover: #d5ddff;
 
-    --heading: #f2dfcb;
-    --body: #e4d3c0;
-    --body-subtle: #c3ab97;
-    --fg-brand: #ff9a63;
-    --fg-brand-strong: #ffb07e;
-    --fg-danger: #ff8f7e;
-    --fg-danger-strong: #ffb0a3;
-    --fg-success: #79ca8e;
-    --fg-success-strong: #98e2a8;
-    --fg-warning: #f0c58a;
-    --fg-disabled: #7f6b59;
+    --cream: #0e1016;
+    --espresso: #eef1f7;
+    --heading: #eef1f7;
+    --body: #d3d9e6;
+    --body-subtle: #98a1b4;
+    --fg-brand: #b6c4ff;
+    --fg-brand-strong: #d5ddff;
+    --fg-danger: #ff8a80;
+    --fg-danger-strong: #ffb4ad;
+    --fg-success: #5fd18d;
+    --fg-success-strong: #8fe6b0;
+    --fg-warning: #ff9a63;
+    --fg-disabled: #6e7688;
 
-    --border-default: #7f6759;
-    --border-default-subtle: #5a4233;
-    --border-default-strong: #a8876f;
-    --border-muted: #2a1e15;
-    --border-brand: #ff9a63;
-    --border-brand-subtle: #4a3120;
-    --border-danger: #ff8f7e;
-    --border-danger-subtle: #4a1a12;
-    --border-success: #6fbf6a;
-    --border-success-subtle: #20361c;
-    --border-warning: #e5a85a;
-    --border-warning-subtle: #46341a;
+    --border-default: #646e84;
+    --border-default-subtle: #363c4a;
+    --border-default-strong: #9aa5bb;
+    --border-muted: #262b35;
+    --border-brand: #b6c4ff;
+    --border-brand-subtle: #3a4573;
+    --border-danger: #ff8a80;
+    --border-danger-subtle: #5c231e;
+    --border-success: #5fd18d;
+    --border-success-subtle: #1e4630;
+    --border-warning: #ff9a63;
+    --border-warning-subtle: #5a3418;
 
-    --shadow-window:
-      0 4px 10px rgba(0, 0, 0, 0.46), 0 20px 38px rgba(0, 0, 0, 0.62);
-    --shadow-menu: 0 5px 16px rgba(0, 0, 0, 0.4);
-    --inset-press: inset 0 2px 4px rgba(0, 0, 0, 0.55);
+    --blueprint-line: #232936;
+
+    /* On a near-black page the offset must be blacker than the surface. */
+    --shadow-ink: #000000;
+    --inset-press: inset 2px 2px 0 0 rgb(0 0 0 / 0.45);
   }
 }
 
@@ -187,20 +201,51 @@
   --color-border-success-subtle: var(--border-success-subtle);
   --color-border-warning: var(--border-warning);
   --color-border-warning-subtle: var(--border-warning-subtle);
+  --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
+  --color-safety-yellow: var(--safety-yellow);
+  --color-blueprint-line: var(--blueprint-line);
 
-  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-space-grotesk), "Helvetica Neue", sans-serif;
   --font-sans: var(--font-dm-sans), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* One ramp, replacing the ~106 arbitrary text-[Npx] values. Declared whole
+     so nothing silently falls back to a stock Tailwind size. */
+  --text-*: initial;
+  --text-2xs: 11px;
+  --text-2xs--line-height: 1.4;
+  --text-xs: 12px;
+  --text-xs--line-height: 1.45;
+  --text-sm: 13px;
+  --text-sm--line-height: 1.5;
+  --text-base: 15px;
+  --text-base--line-height: 1.65;
+  --text-lg: 18px;
+  --text-lg--line-height: 1.6;
+  --text-xl: 22px;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 26px;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 32px;
+  --text-3xl--line-height: 1.15;
+  --text-4xl: 38px;
+  --text-4xl--line-height: 1.1;
 
   --radius-*: initial;
-  --radius-sm: 2px;
-  --radius-base: 3px;
+  --radius-sm: 0px;
+  --radius-base: 2px;
   --radius-full: 999px;
 
   --shadow-*: initial;
   --shadow-window: var(--shadow-window);
   --shadow-menu: var(--shadow-menu);
+  --shadow-hard-primary: var(--shadow-hard-primary);
+  --shadow-hard-yellow: var(--shadow-hard-yellow);
   --shadow-press: var(--inset-press);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 body {
@@ -215,54 +260,49 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-newsreader), Georgia, serif;
-  font-weight: 500;
+  font-family: var(--font-space-grotesk), "Helvetica Neue", sans-serif;
+  font-weight: 700;
   color: var(--heading);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
+/* Uppercase is for lab signage — section eyebrows, window titles, buttons —
+   never applied globally, because most headings are student-written titles
+   and all-caps user content shouts and hurts readability. */
+.u-caps {
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+/* Fluid headings — one clamp each instead of three breakpoint steps. */
 h1 {
-  font-size: 30px;
-  line-height: 1.05;
-  letter-spacing: -0.5px;
+  font-size: clamp(34px, 6.2vw, 64px);
+  line-height: 1.02;
 }
 h2 {
-  font-size: 26px;
-  line-height: 1.1;
-  letter-spacing: -0.3px;
+  font-size: clamp(26px, 3.6vw, 40px);
+  line-height: 1.08;
 }
 h3 {
-  font-size: 22px;
+  font-size: clamp(20px, 2.2vw, 28px);
   line-height: 1.15;
 }
 
-@media (min-width: 768px) {
-  h1 {
-    font-size: 38px;
-  }
-  h2 {
-    font-size: 32px;
-  }
-  h3 {
-    font-size: 28px;
-  }
-}
-
-@media (min-width: 1024px) {
-  h1 {
-    font-size: 52px;
-  }
-  h2 {
-    font-size: 40px;
-  }
-  h3 {
-    font-size: 32px;
-  }
-}
-
-/* Retro keyboard-visible focus on every interactive element. */
+/* Keyboard-visible focus on every interactive element. */
 :focus-visible {
   outline: 2px solid var(--border-brand);
   outline-offset: 2px;
+}
+
+/* Blueprint paper: the dot grid the whole app sits on. */
+.blueprint-grid {
+  background-image: radial-gradient(
+    circle,
+    var(--blueprint-line) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
 }
 
 /* TipTap editor body: contenteditable can't carry per-node classes, so
@@ -290,33 +330,33 @@ h3 {
 }
 .editor-prose blockquote {
   margin: 16px 0;
-  border-left: 2px solid var(--border-default);
-  padding-left: 16px;
+  border-left: 3px solid var(--safety-yellow);
+  padding-left: 18px;
   font-style: italic;
   color: var(--body-subtle);
 }
 .editor-prose pre {
   margin: 16px 0;
   overflow-x: auto;
-  border: 1px solid var(--border-default);
-  border-radius: 3px;
-  background: var(--code-bg);
-  color: var(--code-text);
-  padding: 16px;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 13px;
-}
-.editor-prose code:not(pre code) {
+  border: 2px solid var(--border-default-strong);
   border-radius: 2px;
   background: var(--code-bg);
   color: var(--code-text);
+  padding: 16px;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 13px;
+}
+.editor-prose code:not(pre code) {
+  border-radius: 0;
+  background: var(--code-bg);
+  color: var(--code-text);
   padding: 2px 4px;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: 13px;
 }
 .editor-prose hr {
-  margin: 32px 0;
-  border-color: var(--border-default-subtle);
+  margin: 40px 0;
+  border-top: 2px dashed var(--border-default-subtle);
 }
 .editor-prose a {
   color: var(--fg-brand);

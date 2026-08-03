@@ -1,15 +1,11 @@
 "use client";
 
+import { motion } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import type {
-  AdminBooking,
-  AdminCheckout,
-  AdminIssue,
-  ProjectListItem,
-  User,
-} from "@/lib/types";
+import { DUR, EASE } from "@/lib/motion";
+import type { ProjectListItem, User } from "@/lib/types";
 import {
   Badge,
   Button,
@@ -19,31 +15,23 @@ import {
   Window,
 } from "@/components/ui";
 
-type Tab =
-  "curation" | "people" | "moderation" | "bookings" | "checkouts" | "issues";
+type Tab = "curation" | "people" | "moderation";
 
 const tabClass = (active: boolean) =>
-  "rounded-t-base border-b-2 px-3.5 py-2.5 text-[13px] font-medium transition-colors duration-[120ms] " +
-  (active
-    ? "border-border-brand text-fg-brand"
-    : "border-transparent text-body hover:border-border-default-strong hover:text-heading");
+  "relative px-3.5 py-3 font-display text-xs font-bold uppercase tracking-[0.06em] " +
+  "transition-colors duration-120 " +
+  (active ? "text-fg-brand" : "text-body hover:text-heading");
 
 export function AdminClient({
   me,
   initialFeatured,
   initialUsers,
   initialProjects,
-  initialBookings,
-  initialCheckouts,
-  initialIssues,
 }: {
   me: User;
   initialFeatured: ProjectListItem[];
   initialUsers: User[];
   initialProjects: ProjectListItem[];
-  initialBookings: AdminBooking[];
-  initialCheckouts: AdminCheckout[];
-  initialIssues: AdminIssue[];
 }) {
   const [tab, setTab] = useState<Tab>("curation");
   const [error, setError] = useState<string | null>(null);
@@ -62,16 +50,13 @@ export function AdminClient({
       <Window title="ADMIN.PANEL" floating bodyClassName="p-0">
         <nav
           role="tablist"
-          className="flex border-b border-border-default px-3"
+          className="flex overflow-x-auto border-b-2 border-border-default-strong px-3"
         >
           {(
             [
               ["curation", "Curation"],
               ["people", "People"],
               ["moderation", "Moderation"],
-              ["bookings", "Bookings"],
-              ["checkouts", "Checkouts"],
-              ["issues", "Issues"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -84,6 +69,14 @@ export function AdminClient({
               className={tabClass(tab === key)}
             >
               {label}
+              {tab === key && (
+                <motion.span
+                  aria-hidden
+                  layoutId="admin-tab-underline"
+                  transition={{ duration: DUR.base, ease: EASE.outExpo }}
+                  className="absolute inset-x-0 -bottom-0.5 h-1 bg-brand"
+                />
+              )}
             </button>
           ))}
         </nav>
@@ -101,20 +94,8 @@ export function AdminClient({
           {tab === "moderation" && (
             <ModerationTab initialProjects={initialProjects} run={run} />
           )}
-          {tab === "bookings" && (
-            <BookingsTab initialBookings={initialBookings} run={run} />
-          )}
-          {tab === "checkouts" && (
-            <CheckoutsTab initialCheckouts={initialCheckouts} run={run} />
-          )}
-          {tab === "issues" && (
-            <IssuesTab initialIssues={initialIssues} run={run} />
-          )}
           {error && (
-            <p
-              role="alert"
-              className="mt-4 font-mono text-[12px] text-fg-danger"
-            >
+            <p role="alert" className="mt-4 font-mono text-xs text-fg-danger">
               {error}
             </p>
           )}
@@ -175,21 +156,21 @@ function CurationTab({
     <div className="flex flex-col gap-8">
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-[22px]">Featured projects</h2>
+          <h2 className="u-caps text-xl">Featured projects</h2>
           <a href="/" target="_blank" className={buttonClass("tertiary")}>
             Preview landing ↗
           </a>
         </div>
         {featured.length > 0 ? (
-          <ol
-            data-testid="featured-list"
-            className="flex flex-col divide-y divide-border-default-subtle"
-          >
+          <ol data-testid="featured-list" className="flex flex-col">
             {featured.map((project, index) => (
-              <li key={project.id} className="flex items-center gap-3 py-2">
+              <li
+                key={project.id}
+                className="flex items-center gap-3 border-b border-border-default-subtle px-2 py-3 transition-colors duration-120 last:border-b-0 hover:bg-brand-softer"
+              >
                 <SysLabel className="w-6 text-right">{index + 1}.</SysLabel>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-medium text-heading">
+                  <span className="block truncate text-base font-medium text-heading">
                     {project.title}
                   </span>
                   <SysLabel>{project.owner_name}</SysLabel>
@@ -224,7 +205,7 @@ function CurationTab({
             ))}
           </ol>
         ) : (
-          <p className="text-[15px] leading-[1.65] text-body-subtle">
+          <p className="text-base text-body-subtle">
             Nothing featured yet — the landing grid is empty.
           </p>
         )}
@@ -259,16 +240,19 @@ function CurationTab({
       </section>
 
       <section>
-        <h2 className="mb-3 text-[22px]">Slider pins</h2>
-        <p className="mb-3 text-[13px] text-body-subtle">
+        <h2 className="u-caps mb-3 text-xl">Slider pins</h2>
+        <p className="mb-3 text-sm text-body-subtle">
           Pinned projects (with a cover) lead the landing slideshow; the rest of
           the slots fill randomly.
         </p>
-        <ul className="flex flex-col divide-y divide-border-default-subtle">
+        <ul className="flex flex-col">
           {publicProjects.map((project) => (
-            <li key={project.id} className="flex items-center gap-3 py-2">
+            <li
+              key={project.id}
+              className="flex items-center gap-3 border-b border-border-default-subtle px-2 py-3 transition-colors duration-120 last:border-b-0 hover:bg-brand-softer"
+            >
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px] font-medium text-heading">
+                <span className="block truncate text-base font-medium text-heading">
                   {project.title}
                 </span>
                 <SysLabel>
@@ -337,16 +321,16 @@ function PeopleTab({
           Search
         </Button>
       </form>
-      <ul
-        data-testid="people-list"
-        className="flex flex-col divide-y divide-border-default-subtle"
-      >
+      <ul data-testid="people-list" className="flex flex-col">
         {users.map((user) => (
-          <li key={user.id} className="flex flex-wrap items-center gap-3 py-2">
+          <li
+            key={user.id}
+            className="flex flex-wrap items-center gap-3 border-b border-border-default-subtle px-2 py-3 transition-colors duration-120 last:border-b-0 hover:bg-brand-softer"
+          >
             <span className="min-w-0 flex-1">
               <Link
                 href={`/users/${user.id}`}
-                className="block truncate text-[14px] font-medium text-heading underline-offset-2 hover:underline"
+                className="block truncate text-base font-medium text-heading underline-offset-2 hover:underline"
               >
                 {user.name}
               </Link>
@@ -374,238 +358,6 @@ function PeopleTab({
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-const bookingStatusVariant: Record<
-  AdminBooking["status"],
-  "warning" | "success" | "danger" | "gray"
-> = {
-  pending: "warning",
-  approved: "success",
-  rejected: "danger",
-  cancelled: "gray",
-};
-
-function BookingsTab({
-  initialBookings,
-  run,
-}: {
-  initialBookings: AdminBooking[];
-  run: (action: () => Promise<void>) => Promise<void>;
-}) {
-  const [bookings, setBookings] = useState(initialBookings);
-  const [filter, setFilter] = useState<"pending" | "">("pending");
-
-  const visible = filter
-    ? bookings.filter((b) => b.status === filter)
-    : bookings;
-
-  const decide = (booking: AdminBooking, status: "approved" | "rejected") =>
-    run(async () => {
-      const updated = await api.adminDecideBooking(booking.id, status);
-      setBookings((current) =>
-        current.map((b) => (b.id === booking.id ? updated : b)),
-      );
-    });
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[22px]">Machine bookings</h2>
-        <select
-          aria-label="Filter bookings"
-          className={`${inputClass} w-auto`}
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as "pending" | "")}
-        >
-          <option value="pending">Pending only</option>
-          <option value="">All</option>
-        </select>
-      </div>
-      {visible.length > 0 ? (
-        <ul
-          data-testid="bookings-list"
-          className="flex flex-col divide-y divide-border-default-subtle"
-        >
-          {visible.map((booking) => (
-            <li
-              key={booking.id}
-              className="flex flex-wrap items-center gap-3 py-2.5"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px] font-medium text-heading">
-                  {booking.machine_slug} — {booking.user_name}
-                </span>
-                <SysLabel>
-                  {booking.date} · {booking.start_time.slice(0, 5)}–
-                  {booking.end_time.slice(0, 5)}
-                </SysLabel>
-                {booking.purpose && (
-                  <span className="block truncate text-[13px] text-body-subtle">
-                    {booking.purpose}
-                  </span>
-                )}
-              </span>
-              <Badge variant={bookingStatusVariant[booking.status]} mono>
-                {booking.status}
-              </Badge>
-              {booking.status === "pending" && (
-                <span className="flex gap-2">
-                  <Button onClick={() => void decide(booking, "approved")}>
-                    Approve
-                  </Button>
-                  <Button
-                    variant="tertiary"
-                    onClick={() => void decide(booking, "rejected")}
-                  >
-                    Reject
-                  </Button>
-                </span>
-              )}
-              {booking.status === "approved" && (
-                <Button
-                  variant="tertiary"
-                  onClick={() => void decide(booking, "rejected")}
-                >
-                  Reject
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-[15px] leading-[1.65] text-body-subtle">
-          {filter ? "No pending bookings." : "No bookings yet."}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function CheckoutsTab({
-  initialCheckouts,
-  run,
-}: {
-  initialCheckouts: AdminCheckout[];
-  run: (action: () => Promise<void>) => Promise<void>;
-}) {
-  const [checkouts, setCheckouts] = useState(initialCheckouts);
-
-  const markReturned = (checkout: AdminCheckout) =>
-    run(async () => {
-      await api.returnCheckout(checkout.id);
-      setCheckouts((current) => current.filter((c) => c.id !== checkout.id));
-    });
-
-  return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-[22px]">Tools out</h2>
-      {checkouts.length > 0 ? (
-        <ul
-          data-testid="checkouts-list"
-          className="flex flex-col divide-y divide-border-default-subtle"
-        >
-          {checkouts.map((checkout) => (
-            <li
-              key={checkout.id}
-              className="flex flex-wrap items-center gap-3 py-2.5"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14px] font-medium text-heading">
-                  {checkout.tool_name}
-                  {checkout.quantity > 1 && ` ×${checkout.quantity}`} —{" "}
-                  {checkout.user_name}
-                </span>
-                <SysLabel>
-                  {checkout.category} · due {checkout.due_date}
-                </SysLabel>
-              </span>
-              {checkout.overdue && (
-                <Badge variant="danger" mono>
-                  overdue
-                </Badge>
-              )}
-              <Button
-                variant="tertiary"
-                onClick={() => void markReturned(checkout)}
-              >
-                Mark returned
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-[15px] leading-[1.65] text-body-subtle">
-          Nothing is checked out.
-        </p>
-      )}
-    </div>
-  );
-}
-
-const severityVariant: Record<
-  AdminIssue["severity"],
-  "gray" | "neutral" | "warning" | "danger"
-> = {
-  low: "gray",
-  medium: "neutral",
-  high: "warning",
-  urgent: "danger",
-};
-
-function IssuesTab({
-  initialIssues,
-  run,
-}: {
-  initialIssues: AdminIssue[];
-  run: (action: () => Promise<void>) => Promise<void>;
-}) {
-  const [issues, setIssues] = useState(initialIssues);
-
-  const resolve = (issue: AdminIssue) =>
-    run(async () => {
-      await api.adminSetIssueStatus(issue.id, "resolved");
-      setIssues((current) => current.filter((i) => i.id !== issue.id));
-    });
-
-  return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-[22px]">Open issues</h2>
-      {issues.length > 0 ? (
-        <ul
-          data-testid="issues-list"
-          className="flex flex-col divide-y divide-border-default-subtle"
-        >
-          {issues.map((issue) => (
-            <li
-              key={issue.id}
-              className="flex flex-wrap items-center gap-3 py-2.5"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block text-[14px] font-medium text-heading">
-                  {issue.machine_slug ?? issue.type} — {issue.reporter_name}
-                </span>
-                <span className="block text-[13px] leading-[1.5] text-body">
-                  {issue.description}
-                </span>
-                <SysLabel>{issue.type}</SysLabel>
-              </span>
-              <Badge variant={severityVariant[issue.severity]} mono>
-                {issue.severity}
-              </Badge>
-              <Button variant="tertiary" onClick={() => void resolve(issue)}>
-                Resolve
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-[15px] leading-[1.65] text-body-subtle">
-          No open issues.
-        </p>
-      )}
     </div>
   );
 }
@@ -670,19 +422,16 @@ function ModerationTab({
           Search
         </Button>
       </form>
-      <ul
-        data-testid="moderation-list"
-        className="flex flex-col divide-y divide-border-default-subtle"
-      >
+      <ul data-testid="moderation-list" className="flex flex-col">
         {projects.map((project) => (
           <li
             key={project.id}
-            className="flex flex-wrap items-center gap-3 py-2"
+            className="flex flex-wrap items-center gap-3 border-b border-border-default-subtle px-2 py-3 transition-colors duration-120 last:border-b-0 hover:bg-brand-softer"
           >
             <span className="min-w-0 flex-1">
               <Link
                 href={`/projects/${project.id}`}
-                className="block truncate text-[14px] font-medium text-heading underline-offset-2 hover:underline"
+                className="block truncate text-base font-medium text-heading underline-offset-2 hover:underline"
               >
                 {project.title}
               </Link>

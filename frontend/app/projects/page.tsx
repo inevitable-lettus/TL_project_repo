@@ -9,9 +9,9 @@ export const metadata: Metadata = { title: "Browse — Tinkerer Lab" };
 const PAGE_SIZE = 24;
 
 const pageItem =
-  "grid h-[34px] place-items-center border border-border-default bg-neutral-secondary-soft px-3 " +
-  "text-[13px] font-medium text-body transition-colors duration-[120ms] " +
-  "hover:bg-neutral-secondary-medium hover:text-heading";
+  "grid h-9 place-items-center border-2 border-border-default-strong bg-neutral-primary-soft px-4 " +
+  "font-display text-xs font-bold uppercase tracking-[0.06em] text-body transition-colors duration-120 " +
+  "hover:bg-brand-softer hover:text-heading";
 
 export default async function Showcase({
   searchParams,
@@ -29,14 +29,18 @@ export default async function Showcase({
 
   return (
     <Window title="ALL_PROJECTS.DIR" floating>
-      <div className="mb-6 border-b border-border-default-subtle pb-5">
-        <div className="flex items-baseline justify-between gap-3">
-          <h1 className="text-[26px] md:text-[32px]">The archive</h1>
+      <div className="mb-8 border-b-2 border-dashed border-border-default-subtle pb-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h1 className="u-caps text-3xl">The archive</h1>
           <SysLabel>{total} PROJECTS_ON_FILE</SysLabel>
         </div>
-        <p className="mt-2 max-w-[55ch] text-[15px] leading-[1.65] text-body-subtle">
+        <p className="mt-3 max-w-[55ch] text-base text-body-subtle">
           Every public build from the lab, newest first.
         </p>
+        <div
+          aria-hidden
+          className="mt-5 h-1 w-16 bg-safety-yellow ring-2 ring-border-default-strong"
+        />
       </div>
       {items.length > 0 ? (
         <div
@@ -52,7 +56,7 @@ export default async function Showcase({
           ))}
         </div>
       ) : (
-        <p className="text-[15px] leading-[1.65]">No public projects yet.</p>
+        <p className="text-base">No public projects yet.</p>
       )}
       {totalPages > 1 && (
         <nav

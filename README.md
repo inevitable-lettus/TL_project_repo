@@ -1,6 +1,6 @@
 # Tinkerer Lab
 
-A website where a university makerspace's students and staff store and show off their projects. Each project is a blog-style page (text, photos, videos, and downloadable files); each student has a profile page; staff pick what appears on the landing page. Some projects can be marked private so the public can't see them. It also runs the lab's day-to-day operations: a machines directory with live status, machine slot booking, tool checkout, and issue reporting.
+A website where a university makerspace's students and staff store and show off their projects. Each project is a blog-style page (text, photos, videos, and downloadable files); each student has a profile page; staff pick what appears on the landing page. Some projects can be marked private so the public can't see them.
 
 **This is a real system used by the university Tinkerer Laboratory.** That means security and reliability matter — please read the rules before contributing (links below).
 

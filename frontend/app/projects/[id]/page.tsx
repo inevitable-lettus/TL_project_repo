@@ -89,16 +89,16 @@ export default async function ProjectPage({
             <img
               src={coverUrl}
               alt=""
-              className="max-h-[440px] w-full border-b border-border-default object-cover"
+              className="max-h-[480px] w-full border-b-2 border-border-default-strong object-cover"
             />
           )}
-          <div className="p-5 md:p-8">
-            <header className="mb-6 border-b border-border-default-subtle pb-5">
-              <h1 className="text-balance">{project.title}</h1>
-              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <div className="p-5 md:p-10">
+            <header className="mb-8 border-b-2 border-dashed border-border-default-subtle pb-6">
+              <h1 className="text-3xl">{project.title}</h1>
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 <Link
                   href={`/users/${project.owner_id}`}
-                  className="text-[14px] font-medium text-fg-brand underline hover:no-underline"
+                  className="font-display text-sm font-bold text-fg-brand underline underline-offset-4 hover:no-underline"
                 >
                   {project.owner_name}
                 </Link>
@@ -113,9 +113,7 @@ export default async function ProjectPage({
                 )}
               </div>
               {project.description && (
-                <p className="mt-4 text-lg leading-[1.65] text-body">
-                  {project.description}
-                </p>
+                <p className="mt-5 text-lg text-body">{project.description}</p>
               )}
             </header>
             {project.content ? (
@@ -125,9 +123,7 @@ export default async function ProjectPage({
                 files={project.files}
               />
             ) : (
-              <p className="text-[15px] leading-[1.65] text-body-subtle">
-                No write-up yet.
-              </p>
+              <p className="text-base text-body-subtle">No write-up yet.</p>
             )}
           </div>
         </article>

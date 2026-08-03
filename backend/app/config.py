@@ -30,31 +30,6 @@ class Settings(BaseSettings):
     # Landing slider slot count (pinned first, random public fill).
     slider_size: int = 8
 
-    # Machines directory content: a Google Sheet "publish to web" CSV link.
-    # Empty = the machines feature reports 503 (not configured).
-    machines_sheet_csv_url: str = ""
-    machines_cache_seconds: int = 120
-
-    # Machine booking rules (lab-local times, minutes on the slot grid).
-    booking_slot_minutes: int = 60
-    booking_max_minutes: int = 240
-    booking_advance_days: int = 30
-    lab_open: str = "09:00"
-    lab_close: str = "18:00"
-
-    # Tool checkout categories (comma-separated; parity with the lab's list).
-    tool_categories: str = (
-        "Hand Tools,Handheld Power Tools,Measurement Tools,Safety Equipment,Other"
-    )
-
-    # Outbound mail (booking decisions, urgent issues). Empty host = emails
-    # are skipped by design; every flow works without them.
-    smtp_host: str = ""
-    smtp_port: int = 587
-    smtp_user: str = ""
-    smtp_password: str = ""
-    smtp_from: str = ""
-
     google_client_id: str
     google_client_secret: str
     google_hosted_domain: str

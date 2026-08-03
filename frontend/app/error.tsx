@@ -11,8 +11,8 @@ export default function ErrorPage({
   return (
     <div className="mx-auto max-w-xl pt-12">
       <Window title="SYSTEM_ERROR.LOG" floating>
-        <h1 className="mb-3">Something went wrong</h1>
-        <p className="max-w-[65ch] text-[15px] leading-[1.65]">
+        <h1 className="u-caps mb-3 text-2xl">Something went wrong</h1>
+        <p className="max-w-[65ch] text-base">
           The page hit an unexpected error. Try again — if it keeps happening,
           tell the lab staff.
         </p>

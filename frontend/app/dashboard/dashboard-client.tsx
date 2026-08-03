@@ -102,19 +102,16 @@ export function DashboardClient({
 
       <Window title="MY_PROJECTS.DIR" bodyClassName="p-3 md:p-4">
         {projects.length > 0 ? (
-          <ul
-            data-testid="my-projects"
-            className="flex flex-col divide-y divide-border-default-subtle"
-          >
+          <ul data-testid="my-projects" className="flex flex-col">
             {projects.map((project) => (
               <li
                 key={project.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 px-2 py-3"
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-default-subtle px-2 py-3 transition-colors duration-120 last:border-b-0 hover:bg-brand-softer"
               >
                 <span className="min-w-0 flex-1">
                   <Link
                     href={`/dashboard/${project.id}`}
-                    className="block truncate text-[15px] font-medium text-heading underline-offset-2 hover:underline"
+                    className="block truncate text-base font-medium text-heading underline-offset-2 hover:underline"
                   >
                     {project.title}
                   </Link>
@@ -141,12 +138,12 @@ export function DashboardClient({
             ))}
           </ul>
         ) : (
-          <p className="p-3 text-[15px] leading-[1.65] text-body-subtle">
+          <p className="p-3 text-base text-body-subtle">
             Nothing here yet — create your first project above.
           </p>
         )}
         {error && (
-          <p role="alert" className="p-2 font-mono text-[12px] text-fg-danger">
+          <p role="alert" className="p-2 font-mono text-xs text-fg-danger">
             {error}
           </p>
         )}

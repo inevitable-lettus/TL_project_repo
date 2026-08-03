@@ -1,6 +1,8 @@
 # Design (UX)
 
-The screens and behaviors. **Visual styling — typography, color, spacing, component states — comes from the design flow in CLAUDE.md hard rule 7:** base = TypeUI **storytelling** prompt (page structure/narrative) + TypeUI **nostalgia** prompt (visual voice), both supplied by the owner at frontend kickoff; refined and reviewed with the `impeccable` and `design-taste-frontend` skills. Direction: bold yet simple, smooth transform/opacity animations (no linear PPT fades), sharp bold self-hosted fonts, must not read as AI-generated. Layout inspiration: Instructables/Hackster.io build logs, read.cv profiles, editorial long-form blogs.
+The screens and behaviors. **Visual styling — typography, color, spacing, component states — is the Tinkerers' Lab blueprint-industrial system defined in CLAUDE.md hard rule 7**, with every token in `frontend/app/globals.css` and every motion timing in `frontend/lib/motion.ts`. Blueprint blue / rust / safety yellow / ink on dot-grid paper; hard offset shadows, 2px ink borders, Space Grotesk + DM Sans + JetBrains Mono; content in `Window` containers. Direction: bold yet simple, transform/opacity motion (no linear PPT fades), sharp self-hosted fonts, must not read as AI-generated. Layout inspiration: Instructables/Hackster.io build logs, read.cv profiles, editorial long-form blogs.
+
+**The Playwright suite in `frontend/e2e/` is a design contract, not just a functional one.** It pins the `data-testid`s, exact visible strings (`Tinkerer_Lab`, `SAVED`, `CLASS_OF_<year>`, lowercase badge text like `public`/`staff`/`approved`), accessible names on buttons and labels, element ids used as selectors, and DOM shapes (`<ul>/<li>` rows, `<figure><img>` media, `<a href>…<img>` cards with raw `<img>` — never `next/image`, because presigned URLs must not hit the optimizer). Restyle freely; change any of those and the suite is telling you the redesign broke a contract.
 
 ## Screen inventory
 
@@ -14,11 +16,7 @@ The screens and behaviors. **Visual styling — typography, color, spacing, comp
 | Project editor | Logged-in students/staff (owner) | Visual WYSIWYG (TipTap): headings, text marks, lists, inline image/video/diagram embeds (each embed runs the presigned upload flow), attachments manager for the downloads area, cover picker. |
 | Profile edit | Logged-in owner | Description, program, enrollment year, avatar upload. |
 | My-projects dashboard | Logged-in students/staff | The user's own projects (public and private badges), create/delete, toggle visibility. |
-| Admin dashboard | Staff only | Tabs: **Curation** (feature + reorder, pin to slider, landing preview), **People** (promote/demote staff), **Moderation** (all projects incl. private; edit/hide/delete), and — as lab ops land — **Bookings** (pending queue, approve/reject), **Checkouts** (open + overdue), **Issues** (triage/resolve). All admin actions via UI — never code. |
-| Machines directory | Everyone (incl. anonymous) | Lab equipment grouped by category with live status badge (available / in use / maintenance / offline), training-required chip, notes. Content comes from a staff-edited Google Sheet — no admin UI needed. Links into booking + issue reporting. |
-| Machine booking | Logged-in students/staff | Pick a machine → day picker + slot grid (taken slots disabled) → purpose → request. Bookings start pending; staff approve/reject in the admin dashboard. "My bookings" lives on the dashboard. |
-| Tool checkout | Logged-in students/staff | Log a tool out (category, tool name, quantity, due date); see own open checkouts; mark returned. Staff see an overdue list in the admin dashboard. |
-| Issue report | Logged-in students/staff | Report a broken machine or safety issue (type, severity, machine optional, description). Staff triage/resolve in the admin dashboard. |
+| Admin dashboard | Staff only | Tabs: **Curation** (feature + reorder, pin to slider, landing preview), **People** (promote/demote staff), **Moderation** (all projects incl. private; edit/hide/delete). All admin actions via UI — never code. |
 
 ## Project content model (blog)
 

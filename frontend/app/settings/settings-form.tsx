@@ -83,7 +83,7 @@ export function SettingsForm({
             {status && (
               <span
                 data-testid="settings-status"
-                className={`font-mono text-[12px] tracking-[0.4px] ${
+                className={`font-mono text-xs tracking-[0.1em] ${
                   status === "saved" ? "text-fg-success" : "text-fg-danger"
                 }`}
               >
@@ -108,10 +108,10 @@ export function SettingsForm({
               src={avatarUrl}
               alt={name}
               data-testid="avatar-preview"
-              className="size-20 shrink-0 rounded-base border border-border-default object-cover"
+              className="size-20 shrink-0 rounded-base border-2 border-border-default-strong object-cover shadow-menu"
             />
           ) : (
-            <div className="grid size-20 shrink-0 place-items-center rounded-base border border-border-default bg-neutral-secondary-soft font-serif text-2xl text-heading">
+            <div className="blueprint-grid grid size-20 shrink-0 place-items-center rounded-base border-2 border-border-default-strong bg-neutral-secondary-soft font-display text-2xl font-bold text-heading shadow-menu">
               {name.charAt(0).toUpperCase()}
             </div>
           )}

@@ -20,10 +20,11 @@ import { Media } from "./media-extension";
 import { UploadMeter } from "./upload-meter";
 
 const toolbarButton = (active: boolean) =>
-  "rounded-base border px-2 py-1 font-mono text-[12px] transition-colors duration-[120ms] " +
+  "rounded-base border-2 border-border-default-strong px-2 py-1 font-mono text-xs font-bold " +
+  "transition-[background-color,color,box-shadow,transform] duration-120 " +
   (active
-    ? "border-border-default-strong bg-neutral-secondary-strong text-heading shadow-press"
-    : "border-border-default bg-neutral-primary-soft text-heading hover:bg-neutral-secondary-medium");
+    ? "bg-ink text-on-ink shadow-none"
+    : "bg-neutral-primary-soft text-heading shadow-menu hover:bg-brand-softer active:shadow-none");
 
 function Toolbar({
   editor,
@@ -163,7 +164,7 @@ export function ProjectEditor({
     editorProps: {
       attributes: {
         class:
-          "editor-prose min-h-[320px] px-5 py-4 text-[15px] leading-[1.65] focus:outline-none",
+          "editor-prose min-h-[320px] px-5 py-4 text-base focus:outline-none",
         "data-testid": "editor-content",
       },
     },
@@ -219,7 +220,7 @@ export function ProjectEditor({
           {status && (
             <span
               data-testid="save-status"
-              className={`font-mono text-[12px] tracking-[0.4px] ${
+              className={`font-mono text-xs tracking-[0.1em] ${
                 status === "saved" ? "text-fg-success" : "text-fg-danger"
               }`}
             >

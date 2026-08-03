@@ -1,17 +1,15 @@
 import uuid
-from datetime import date, datetime, time
+from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
-    Date,
     DateTime,
     ForeignKey,
     Index,
     Integer,
     String,
-    Time,
     func,
     text,
 )
@@ -117,79 +115,6 @@ class Project(Base):
         cascade="all, delete-orphan",
         foreign_keys="File.project_id",
     )
-
-
-class Booking(Base):
-    __tablename__ = "bookings"
-    __table_args__ = (Index("ix_bookings_machine_date", "machine_slug", "date"),)
-
-    id: Mapped[uuid.UUID] = uuid_pk()
-    # RESTRICT like Project.owner_id — bookings are usage history.
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
-    # Slug from the machines sheet; kept verbatim even if the machine is
-    # later removed from the sheet.
-    machine_slug: Mapped[str] = mapped_column(String, nullable=False)
-    date: Mapped[date] = mapped_column(Date, nullable=False)
-    start_time: Mapped[time] = mapped_column(Time, nullable=False)
-    end_time: Mapped[time] = mapped_column(Time, nullable=False)
-    purpose: Mapped[str] = mapped_column(String, nullable=False)
-    # pending | approved | rejected | cancelled
-    status: Mapped[str] = mapped_column(
-        String, nullable=False, server_default="pending"
-    )
-    created_at: Mapped[datetime] = created_at_col()
-
-    user: Mapped[User] = relationship()
-
-
-class Checkout(Base):
-    __tablename__ = "checkouts"
-    __table_args__ = (Index("ix_checkouts_status_due", "status", "due_date"),)
-
-    id: Mapped[uuid.UUID] = uuid_pk()
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
-    category: Mapped[str] = mapped_column(String, nullable=False)
-    tool_name: Mapped[str] = mapped_column(String, nullable=False)
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
-    due_date: Mapped[date] = mapped_column(Date, nullable=False)
-    # out | returned
-    status: Mapped[str] = mapped_column(String, nullable=False, server_default="out")
-    returned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = created_at_col()
-
-    user: Mapped[User] = relationship()
-
-
-class Issue(Base):
-    __tablename__ = "issues"
-    __table_args__ = (Index("ix_issues_status", "status"),)
-
-    id: Mapped[uuid.UUID] = uuid_pk()
-    reporter_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
-    # Optional; kept verbatim even if the machine leaves the sheet.
-    machine_slug: Mapped[str | None] = mapped_column(String)
-    # equipment | safety | other
-    type: Mapped[str] = mapped_column(String, nullable=False)
-    # low | medium | high | urgent
-    severity: Mapped[str] = mapped_column(String, nullable=False)
-    description: Mapped[str] = mapped_column(String, nullable=False)
-    # open | resolved
-    status: Mapped[str] = mapped_column(String, nullable=False, server_default="open")
-    created_at: Mapped[datetime] = created_at_col()
-
-    reporter: Mapped[User] = relationship()
 
 
 class File(Base):

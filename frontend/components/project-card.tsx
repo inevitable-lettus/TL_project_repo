@@ -4,6 +4,8 @@ import { formatDate } from "@/lib/format";
 import type { ProjectListItem } from "@/lib/types";
 
 // Window-styled card: project title as the window title, cover as the body.
+// The lift is CSS rather than Motion — these render dozens to a grid and none
+// of them need a client boundary for a hover state.
 export function ProjectCard({
   project,
   coverUrl,
@@ -14,10 +16,10 @@ export function ProjectCard({
   showVisibility?: boolean;
 }) {
   return (
-    <Link href={`/projects/${project.id}`} className="group block">
-      <article className="overflow-hidden rounded-base border border-border-default bg-neutral-primary-soft transition-[transform,border-color,box-shadow] duration-[120ms] group-hover:-translate-y-0.5 group-hover:border-border-default-strong group-hover:shadow-menu group-active:translate-y-0 group-active:shadow-press motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
-        <header className="flex h-8 items-center gap-2 border-b border-border-default bg-menu-bar px-3">
-          <span className="truncate text-[13px] font-semibold text-heading">
+    <Link href={`/projects/${project.id}`} className="group block h-full">
+      <article className="flex h-full flex-col overflow-hidden rounded-base border-2 border-border-default-strong bg-neutral-primary-soft shadow-menu transition-[transform,box-shadow] duration-120 ease-out-quart group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:shadow-window group-active:translate-x-0 group-active:translate-y-0 group-active:shadow-none motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0">
+        <header className="flex h-9 items-center gap-2 border-b-2 border-border-default-strong bg-menu-bar px-3">
+          <span className="truncate font-display text-sm font-bold text-heading">
             {project.title}
           </span>
           {showVisibility && (
@@ -38,17 +40,17 @@ export function ProjectCard({
             className="aspect-[4/3] w-full object-cover"
           />
         ) : (
-          <div className="grid aspect-[4/3] w-full place-items-center bg-neutral-secondary-soft">
+          <div className="blueprint-grid grid aspect-[4/3] w-full place-items-center bg-neutral-secondary-soft">
             <SysLabel>NO_COVER.IMG</SysLabel>
           </div>
         )}
         {project.description && (
-          <p className="line-clamp-2 border-t border-border-default-subtle px-3 py-2 text-[13px] leading-[1.5] text-body-subtle">
+          <p className="line-clamp-2 border-t border-border-default-subtle px-3 py-2 text-sm text-body-subtle">
             {project.description}
           </p>
         )}
-        <div className="flex items-center justify-between gap-2 border-t border-border-default px-3 py-2 transition-colors duration-[120ms] group-hover:bg-neutral-secondary-medium">
-          <span className="truncate text-[13px] text-body">
+        <div className="mt-auto flex items-center justify-between gap-2 border-t-2 border-border-default-strong px-3 py-2 transition-colors duration-120 group-hover:bg-brand-softer">
+          <span className="truncate text-sm text-body">
             {project.owner_name}
           </span>
           <SysLabel>{formatDate(project.created_at)}</SysLabel>

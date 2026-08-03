@@ -1,14 +1,5 @@
 import type {
-  AdminBooking,
-  AdminCheckout,
-  AdminIssue,
-  Booking,
-  Checkout,
-  Issue,
-  BookingRules,
-  DaySlot,
   DownloadUrl,
-  Machine,
   Profile,
   ProjectDetail,
   ProjectListItem,
@@ -91,60 +82,6 @@ export const api = {
     request<ProjectDetail>(`/projects/${id}`, { method: "PATCH", body }),
   deleteProject: (id: string) =>
     request<{ status: string }>(`/projects/${id}`, { method: "DELETE" }),
-
-  machines: () => request<Machine[]>("/machines"),
-
-  bookingRules: () => request<BookingRules>("/bookings/rules"),
-  bookingDay: (machine: string, date: string) =>
-    request<DaySlot[]>(
-      `/bookings/day?machine=${encodeURIComponent(machine)}&date=${date}`,
-    ),
-  createBooking: (body: {
-    machine_slug: string;
-    date: string;
-    start_time: string;
-    end_time: string;
-    purpose: string;
-  }) => request<Booking>("/bookings", { method: "POST", body }),
-  myBookings: (cookie?: string) =>
-    request<Booking[]>("/bookings/mine", { cookie }),
-  cancelBooking: (id: string) =>
-    request<Booking>(`/bookings/${id}/cancel`, { method: "POST" }),
-  adminBookings: (status = "", cookie?: string) =>
-    request<AdminBooking[]>(`/admin/bookings?status=${status}`, { cookie }),
-  adminDecideBooking: (id: string, status: "approved" | "rejected") =>
-    request<AdminBooking>(`/admin/bookings/${id}`, {
-      method: "PATCH",
-      body: { status },
-    }),
-
-  toolCategories: () => request<string[]>("/checkouts/categories"),
-  createCheckout: (body: {
-    category: string;
-    tool_name: string;
-    quantity: number;
-    due_date: string;
-  }) => request<Checkout>("/checkouts", { method: "POST", body }),
-  myCheckouts: (cookie?: string) =>
-    request<Checkout[]>("/checkouts/mine", { cookie }),
-  returnCheckout: (id: string) =>
-    request<Checkout>(`/checkouts/${id}/return`, { method: "POST" }),
-  adminCheckouts: (status = "out", cookie?: string) =>
-    request<AdminCheckout[]>(`/admin/checkouts?status=${status}`, { cookie }),
-
-  createIssue: (body: {
-    machine_slug: string | null;
-    type: Issue["type"];
-    severity: Issue["severity"];
-    description: string;
-  }) => request<Issue>("/issues", { method: "POST", body }),
-  adminIssues: (status = "open", cookie?: string) =>
-    request<AdminIssue[]>(`/admin/issues?status=${status}`, { cookie }),
-  adminSetIssueStatus: (id: string, status: "open" | "resolved") =>
-    request<AdminIssue>(`/admin/issues/${id}`, {
-      method: "PATCH",
-      body: { status },
-    }),
 
   profile: (id: string, cookie?: string) =>
     request<Profile>(`/users/${id}`, { cookie }),

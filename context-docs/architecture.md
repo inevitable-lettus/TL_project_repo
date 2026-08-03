@@ -86,33 +86,18 @@ sequenceDiagram
 - Keep a clean **`get_current_user` dependency** so the auth mechanism stays swappable.
 - **Role is not in the Google token.** Plan for manual staff assignment via an allowlist/admin table. Default new users to `student`.
 
-## Machines content: Google Sheet as read-only CMS (Track B)
+## Removed: lab ops (machines, booking, tool checkout, issue reporting)
 
-Machine details (name, category, status, training flag, notes) change daily
-and are staff-maintained, so they live in a **Google Sheet published to the
-web as CSV** — the one content source outside Postgres.
+Built as "Track B" in v1.1, then **removed on 2026-08-02** — day-to-day lab
+operations belong to a different student's project, not this repo. This one
+is the project archive and nothing else.
 
-- Env: `MACHINES_SHEET_CSV_URL` (the "publish to web" CSV link — contains no
-  secrets and must not; anyone with the link can read it) and
-  `MACHINES_CACHE_SECONDS` (default ~120).
-- `GET /machines`: backend fetches the CSV, parses rows
-  (`slug,name,category,status,training_required,notes`, status ∈
-  available/in_use/maintenance/offline), serves JSON from an in-process TTL
-  cache. On fetch failure it serves the last good copy and logs loudly; 503
-  only if no copy was ever fetched.
-- The Sheet is **content only, never transactional**. Bookings, checkouts,
-  and issues are Postgres tables keyed to real OAuth users — machine
-  identity in those tables is the sheet's `slug` (bookings keep their slug
-  even if a machine later disappears from the sheet).
-
-Ops tables (Track B migrations): `bookings(user_id, machine_slug, date,
-start/end, purpose, status pending|approved|rejected|cancelled)`,
-`checkouts(user_id, category, tool_name, quantity, due_date, status
-out|returned)`, `issues(reporter_id, machine_slug?, type, severity, status
-open|resolved)`. Booking rules are env-driven (`BOOKING_SLOT_MINUTES`,
-`BOOKING_MAX_MINUTES`, `BOOKING_ADVANCE_DAYS`, `LAB_OPEN`, `LAB_CLOSE`).
-Email (booking decisions, overdue reminders, urgent issues) activates only
-when `SMTP_*` env vars are set — flows never depend on it.
+Gone: the `/machines`, `/bookings`, `/checkouts`, `/issues` routers, the
+`bookings`/`checkouts`/`issues` tables (dropped in migration
+`0007_drop_lab_ops`, whose `downgrade()` recreates the schema if it is ever
+wanted back), the Google-Sheet-as-CMS read path, SMTP mail, and their env
+vars (`MACHINES_*`, `BOOKING_*`, `LAB_OPEN`/`LAB_CLOSE`, `TOOL_CATEGORIES`,
+`SMTP_*`). Don't reintroduce them here.
 
 ## Docker / nginx topology
 

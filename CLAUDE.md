@@ -2,6 +2,8 @@
 
 Public-facing web app where a university makerspace's staff and students store and browse project files, with a private mode to hide selected projects from public view. Each project is a blog-style page (rich text with inline photos/videos plus a downloads area); each student has a public profile page; staff curate the landing page (slider pins + featured projects) and manage users through an admin dashboard UI, never through code.
 
+**Scope is the project archive and nothing else.** Lab operations — machines directory, machine booking, tool checkout, issue reporting — were built in v1.1 and removed on 2026-08-02; they belong to a different student's project. Don't add them back here.
+
 **This is a production system in active use by the university Tinkerer Laboratory.** Security and reliability are first-class, not afterthoughts — guard auth/visibility boundaries, never expose internal services, fail loud on misconfig, keep the deploy reproducible.
 
 This file is the entry point for every Claude Code session. Read it first.
@@ -23,7 +25,7 @@ This file is the entry point for every Claude Code session. Read it first.
 4. **All limits via env vars, never hardcoded, never effectively unlimited.** `MAX_FILE_SIZE`, per-user/project quota. Real placeholder default: 2GB/file. Enforce size in three places (see architecture.md).
 5. **The cleanup job is mandatory.** Pending File rows older than ~1hr → delete the orphaned MinIO object, then the row.
 6. **Project delete must purge MinIO objects first, then the DB row.** `ON DELETE CASCADE` only removes File rows, not MinIO objects. Cascade alone leaks storage.
-7. **Visual design flow is fixed:** base direction comes from two TypeUI prompts — the **storytelling** flow (page structure/narrative) and the **nostalgia** style (visual voice), both pasted by the owner when frontend work starts — then refined and reviewed with the installed `impeccable` and `design-taste-frontend` skills. Bold yet simple; smooth transform/opacity animations (never linear PPT fades); sharp bold self-hosted fonts; must not look AI-generated. Never invent a separate visual system or hardcode ad-hoc colors/spacing outside the tokens this flow produces.
+7. **Visual system is fixed: Tinkerers' Lab blueprint-industrial.** Blueprint blue, rust, safety yellow, ink, on dot-grid paper; hard `4px 4px 0 0` offset shadows (never blurred); 2px ink borders; Space Grotesk / DM Sans / JetBrains Mono, self-hosted via `next/font`. Content sits in `Window` containers (mono title bar + bordered body). **All tokens live in `frontend/app/globals.css`** — colors, the `--text-*` ramp, radii, shadows, easings. Never hardcode a color, size, or duration outside them; never add a token whose name isn't already used. Refine with the `impeccable` and `design-taste-frontend` skills. Motion is `motion` (motion.dev) with every timing from `frontend/lib/motion.ts` — transform/opacity only, never linear fades. Rules that bite: uppercase must come from CSS, never from changing a source string (tests read DOM text); safety yellow is a fill only, never text on a light surface; scroll reveals must use `amount: "some"` (a ratio threshold never fires on an element taller than the viewport); and never nest a reveal inside a revealing `Window`.
 
 ## Coding rules
 
@@ -42,7 +44,7 @@ Constraints, not prose. A readable, simple codebase is the goal — not a vibe-c
 ## Other docs
 
 - [context-docs/architecture.md](context-docs/architecture.md) — components, the presigned flows, cleanup, auth/JWT, Docker/nginx topology, where each secret lives.
-- [context-docs/design.md](context-docs/design.md) — screen inventory, public-vs-private behavior, upload UX (pending→ready). No visual tokens — those come from the design flow in hard rule 7.
+- [context-docs/design.md](context-docs/design.md) — screen inventory, public-vs-private behavior, upload UX (pending→ready). No visual tokens — those live in `frontend/app/globals.css` per hard rule 7.
 - [context-docs/product.md](context-docs/product.md) — who it's for, the problem, user stories, what's out of scope for v1.
 - [context-docs/handoff.md](context-docs/handoff.md) — dependency-ordered build phases with a "done =" definition each.
 - [context-docs/notes.md](context-docs/notes.md) — plain-language developer notes (jargon explained, what each task built). Update alongside handoff.md after every task.

@@ -27,10 +27,10 @@ export function Downloads({ files }: { files: FileInfo[] }) {
       {files.map((file) => (
         <li
           key={file.id}
-          className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-default-subtle py-2.5 last:border-b-0 sm:grid-cols-[1fr_auto_auto] sm:gap-x-5"
+          className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-default-subtle py-3 transition-colors duration-120 last:border-b-0 hover:bg-brand-softer sm:grid-cols-[1fr_auto_auto] sm:gap-x-5"
         >
           <span className="min-w-0">
-            <span className="block truncate font-mono text-[13px] text-heading">
+            <span className="block truncate font-mono text-sm font-medium text-heading">
               {file.filename}
             </span>
             <SysLabel className="sm:hidden">

@@ -1,5 +1,4 @@
 import uuid
-from datetime import date as date_type
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -9,12 +8,8 @@ from sqlalchemy.orm import Session, selectinload
 
 from .access import get_project_or_404
 from .auth import require_staff
-from .bookings import BookingOut, lock_machine_day, overlapping
-from .checkouts import CheckoutOut
 from .db import get_db
-from .emails import send_email
-from .issues import IssueOut
-from .models import Booking, Checkout, Issue, Project, User
+from .models import Project, User
 from .projects import ProjectPage, project_item
 from .schemas import UserOut
 
@@ -80,160 +75,6 @@ def set_role(
     db.commit()
     db.refresh(user)
     return user
-
-
-class AdminBookingOut(BookingOut):
-    user_name: str
-    user_email: str
-
-
-def admin_booking_out(booking: Booking) -> AdminBookingOut:
-    return AdminBookingOut(
-        **BookingOut.model_validate(booking).model_dump(),
-        user_name=booking.user.name,
-        user_email=booking.user.email,
-    )
-
-
-@router.get("/bookings", response_model=list[AdminBookingOut])
-def list_bookings(
-    db: Session = Depends(get_db),
-    staff: User = Depends(require_staff),
-    status: str = Query(default="", max_length=20),
-) -> list[AdminBookingOut]:
-    query = select(Booking).options(selectinload(Booking.user))
-    if status:
-        query = query.where(Booking.status == status)
-    bookings = (
-        db.execute(
-            query.order_by(Booking.date.desc(), Booking.start_time.desc()).limit(200)
-        )
-        .scalars()
-        .all()
-    )
-    return [admin_booking_out(b) for b in bookings]
-
-
-class BookingDecision(BaseModel):
-    status: Literal["approved", "rejected"]
-
-
-@router.patch("/bookings/{booking_id}", response_model=AdminBookingOut)
-def decide_booking(
-    booking_id: uuid.UUID,
-    body: BookingDecision,
-    db: Session = Depends(get_db),
-    staff: User = Depends(require_staff),
-) -> AdminBookingOut:
-    booking = db.get(Booking, booking_id)
-    if booking is None:
-        raise HTTPException(status_code=404, detail="Booking not found")
-    if booking.status not in ("pending", "approved"):
-        raise HTTPException(status_code=400, detail="booking is not decidable")
-
-    if body.status == "approved":
-        # Two pendings can overlap; only one may be approved.
-        lock_machine_day(db, booking.machine_slug, booking.date)
-        clash = overlapping(
-            db,
-            booking.machine_slug,
-            booking.date,
-            booking.start_time,
-            booking.end_time,
-            statuses=("approved",),
-            exclude_id=booking.id,
-        )
-        if clash:
-            raise HTTPException(
-                status_code=409, detail="an approved booking already covers this slot"
-            )
-
-    booking.status = body.status
-    db.commit()
-    db.refresh(booking)
-    send_email(
-        booking.user.email,
-        f"Booking {body.status}: {booking.machine_slug} on {booking.date}",
-        f"Your booking for {booking.machine_slug} on {booking.date} "
-        f"{booking.start_time:%H:%M}–{booking.end_time:%H:%M} was {body.status}.",
-    )
-    return admin_booking_out(booking)
-
-
-class AdminCheckoutOut(CheckoutOut):
-    user_name: str
-    user_email: str
-    overdue: bool
-
-
-@router.get("/checkouts", response_model=list[AdminCheckoutOut])
-def list_checkouts(
-    db: Session = Depends(get_db),
-    staff: User = Depends(require_staff),
-    status: str = Query(default="out", max_length=20),
-) -> list[AdminCheckoutOut]:
-    query = select(Checkout).options(selectinload(Checkout.user))
-    if status:
-        query = query.where(Checkout.status == status)
-    checkouts = db.execute(query.order_by(Checkout.due_date).limit(200)).scalars().all()
-    today = date_type.today()
-    return [
-        AdminCheckoutOut(
-            **CheckoutOut.model_validate(c).model_dump(),
-            user_name=c.user.name,
-            user_email=c.user.email,
-            overdue=c.status == "out" and c.due_date < today,
-        )
-        for c in checkouts
-    ]
-
-
-class AdminIssueOut(IssueOut):
-    reporter_name: str
-    reporter_email: str
-
-
-def admin_issue_out(issue: Issue) -> AdminIssueOut:
-    return AdminIssueOut(
-        **IssueOut.model_validate(issue).model_dump(),
-        reporter_name=issue.reporter.name,
-        reporter_email=issue.reporter.email,
-    )
-
-
-@router.get("/issues", response_model=list[AdminIssueOut])
-def list_issues(
-    db: Session = Depends(get_db),
-    staff: User = Depends(require_staff),
-    status: str = Query(default="open", max_length=20),
-) -> list[AdminIssueOut]:
-    query = select(Issue).options(selectinload(Issue.reporter))
-    if status:
-        query = query.where(Issue.status == status)
-    issues = (
-        db.execute(query.order_by(Issue.created_at.desc()).limit(200)).scalars().all()
-    )
-    return [admin_issue_out(i) for i in issues]
-
-
-class IssuePatch(BaseModel):
-    status: Literal["open", "resolved"]
-
-
-@router.patch("/issues/{issue_id}", response_model=AdminIssueOut)
-def set_issue_status(
-    issue_id: uuid.UUID,
-    body: IssuePatch,
-    db: Session = Depends(get_db),
-    staff: User = Depends(require_staff),
-) -> AdminIssueOut:
-    issue = db.get(Issue, issue_id)
-    if issue is None:
-        raise HTTPException(status_code=404, detail="Issue not found")
-    issue.status = body.status
-    db.commit()
-    db.refresh(issue)
-    return admin_issue_out(issue)
 
 
 class FeaturedPut(BaseModel):

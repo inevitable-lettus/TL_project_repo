@@ -45,16 +45,18 @@ function MediaView({ node, selected, deleteNode }: NodeViewProps) {
   return (
     <NodeViewWrapper data-testid="editor-media">
       <figure
-        className={`relative my-5 rounded-base border ${
-          selected ? "border-border-brand" : "border-border-default"
+        className={`relative my-6 rounded-base border-2 transition-shadow duration-120 ${
+          selected
+            ? "border-border-default-strong shadow-hard-primary"
+            : "border-border-default"
         }`}
       >
         {failed ? (
-          <p className="p-4 font-mono text-[12px] text-fg-danger">
+          <p className="p-4 font-mono text-xs text-fg-danger">
             media unavailable
           </p>
         ) : !media ? (
-          <p className="p-4 font-mono text-[12px] text-body-subtle">
+          <p className="p-4 font-mono text-xs text-body-subtle">
             loading media…
           </p>
         ) : media.mime_type.startsWith("video/") ? (
@@ -72,7 +74,7 @@ function MediaView({ node, selected, deleteNode }: NodeViewProps) {
           type="button"
           aria-label="Remove media"
           onClick={deleteNode}
-          className="absolute right-2 top-2 grid size-7 place-items-center rounded-base border border-border-default bg-menu-bar text-[13px] text-heading transition-colors duration-[120ms] hover:bg-danger hover:text-cream"
+          className="absolute right-2 top-2 grid size-7 place-items-center rounded-base border-2 border-border-default-strong bg-menu-bar text-sm font-bold text-heading transition-colors duration-120 hover:bg-danger hover:text-cream"
         >
           ✕
         </button>

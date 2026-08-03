@@ -75,14 +75,14 @@ export function AttachmentsPanel({
       bodyClassName="flex flex-col gap-3 p-5 md:p-6"
     >
       {files.length > 0 ? (
-        <ul className="flex flex-col divide-y divide-border-default-subtle">
+        <ul className="flex flex-col">
           {files.map((file) => (
             <li
               key={file.id}
-              className="flex items-center justify-between gap-3 py-2"
+              className="flex items-center justify-between gap-3 border-b border-border-default-subtle px-2 py-3 transition-colors duration-120 last:border-b-0 hover:bg-brand-softer"
             >
               <span className="min-w-0">
-                <span className="block truncate text-[14px] font-medium text-heading">
+                <span className="block truncate text-base font-medium text-heading">
                   {file.filename}
                 </span>
                 <SysLabel>{formatBytes(file.size)}</SysLabel>
@@ -94,7 +94,7 @@ export function AttachmentsPanel({
           ))}
         </ul>
       ) : (
-        <p className="text-[15px] leading-[1.65] text-body-subtle">
+        <p className="text-base text-body-subtle">
           No downloads yet. Attachments show up in the project&apos;s Downloads
           section.
         </p>
@@ -140,9 +140,9 @@ function CoverThumb({
       type="button"
       onClick={onPick}
       aria-pressed={isCover}
-      className={`relative aspect-[4/3] overflow-hidden rounded-base border transition-colors duration-[120ms] ${
+      className={`relative aspect-[4/3] overflow-hidden rounded-base border-2 transition-[border-color,box-shadow] duration-120 ${
         isCover
-          ? "border-border-brand shadow-press"
+          ? "border-border-default-strong shadow-hard-primary"
           : "border-border-default hover:border-border-default-strong"
       }`}
     >
@@ -151,12 +151,12 @@ function CoverThumb({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt={file.filename} className="size-full object-cover" />
       ) : (
-        <span className="grid size-full place-items-center font-mono text-[11px] text-body-subtle">
+        <span className="grid size-full place-items-center font-mono text-2xs text-body-subtle">
           …
         </span>
       )}
       {isCover && (
-        <span className="absolute inset-x-0 bottom-0 bg-menu-bar/95 py-0.5 text-center font-mono text-[11px] tracking-[0.4px] text-heading">
+        <span className="absolute inset-x-0 bottom-0 bg-safety-yellow py-0.5 text-center font-mono text-2xs font-bold tracking-[0.1em] text-ink">
           COVER
         </span>
       )}
@@ -253,13 +253,13 @@ export function CoverPicker({
           ))}
         </div>
       ) : (
-        <p className="text-[15px] leading-[1.65] text-body-subtle">
+        <p className="text-base text-body-subtle">
           Embed an image in the write-up first — covers are picked from the
           project&apos;s images.
         </p>
       )}
       {error && (
-        <p role="alert" className="font-mono text-[12px] text-fg-danger">
+        <p role="alert" className="font-mono text-xs text-fg-danger">
           {error}
         </p>
       )}

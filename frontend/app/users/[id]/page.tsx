@@ -72,18 +72,16 @@ export default async function ProfilePage({
             <img
               src={avatarUrl}
               alt={profile.name}
-              className="size-28 shrink-0 rounded-base border border-border-default object-cover shadow-menu md:size-36"
+              className="size-28 shrink-0 rounded-base border-2 border-border-default-strong object-cover shadow-window md:size-36"
             />
           ) : (
-            <div className="grid size-28 shrink-0 place-items-center rounded-base border border-border-default bg-neutral-secondary-soft font-serif text-4xl text-heading md:size-36">
+            <div className="blueprint-grid grid size-28 shrink-0 place-items-center rounded-base border-2 border-border-default-strong bg-neutral-secondary-soft font-display text-4xl font-bold text-heading shadow-window md:size-36">
               {profile.name.charAt(0).toUpperCase()}
             </div>
           )}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-balance text-[30px] md:text-[38px]">
-                {profile.name}
-              </h1>
+              <h1 className="text-3xl">{profile.name}</h1>
               {profile.role === "staff" && (
                 <Badge variant="brand" mono>
                   staff
@@ -103,7 +101,7 @@ export default async function ProfilePage({
               )}
             </div>
             {profile.bio && (
-              <p className="mt-4 max-w-[65ch] text-[15px] leading-[1.65] text-body">
+              <p className="mt-5 max-w-[65ch] text-base text-body">
                 {profile.bio}
               </p>
             )}
@@ -127,7 +125,7 @@ export default async function ProfilePage({
             ))}
           </div>
         ) : (
-          <p className="text-[15px] leading-[1.65]">No projects yet.</p>
+          <p className="text-base">No projects yet.</p>
         )}
       </Window>
     </div>

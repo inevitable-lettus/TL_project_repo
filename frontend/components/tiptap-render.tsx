@@ -40,7 +40,7 @@ function renderText(node: TipTapNode, key: number): ReactNode {
         break;
       case "code":
         element = (
-          <code className="rounded-sm bg-code-bg px-1 py-0.5 font-mono text-[13px] text-code-text">
+          <code className="rounded-sm bg-code-bg px-1 py-0.5 font-mono text-sm text-code-text">
             {element}
           </code>
         );
@@ -49,7 +49,7 @@ function renderText(node: TipTapNode, key: number): ReactNode {
         element = (
           <a
             href={String(mark.attrs?.href ?? "")}
-            className="font-medium text-fg-brand underline hover:no-underline"
+            className="font-medium text-fg-brand underline underline-offset-2 hover:no-underline"
             rel="noopener noreferrer"
           >
             {element}
@@ -67,12 +67,12 @@ function renderMedia(node: TipTapNode, ctx: MediaContext, key: number) {
   const file = ctx.files.get(fileId);
   if (!url || !file) return null;
   return (
-    <figure key={key} className="my-5">
+    <figure key={key} className="my-7">
       {file.mime_type.startsWith("video/") ? (
         <video
           src={url}
           controls
-          className="w-full rounded-base border border-border-default"
+          className="w-full rounded-base border-2 border-border-default-strong"
         />
       ) : (
         // Presigned URL — must not go through the Next image optimizer.
@@ -80,7 +80,7 @@ function renderMedia(node: TipTapNode, ctx: MediaContext, key: number) {
         <img
           src={url}
           alt={file.filename}
-          className="w-full rounded-base border border-border-default"
+          className="w-full rounded-base border-2 border-border-default-strong"
         />
       )}
     </figure>
@@ -98,7 +98,7 @@ function renderNode(
       return renderText(node, key);
     case "paragraph":
       return (
-        <p key={key} className="my-3 text-[15px] leading-[1.65]">
+        <p key={key} className="my-4 text-base">
           {children}
         </p>
       );
@@ -106,26 +106,20 @@ function renderNode(
       const level = Math.min(Number(node.attrs?.level ?? 1) + 1, 6);
       const Tag = `h${level}` as keyof JSX.IntrinsicElements;
       return (
-        <Tag key={key} className="mb-3 mt-8">
+        <Tag key={key} className="mb-3 mt-10">
           {children}
         </Tag>
       );
     }
     case "bulletList":
       return (
-        <ul
-          key={key}
-          className="my-3 list-disc space-y-2 pl-6 text-[15px] leading-[1.65]"
-        >
+        <ul key={key} className="my-4 list-disc space-y-2 pl-6 text-base">
           {children}
         </ul>
       );
     case "orderedList":
       return (
-        <ol
-          key={key}
-          className="my-3 list-decimal space-y-2 pl-6 text-[15px] leading-[1.65]"
-        >
+        <ol key={key} className="my-4 list-decimal space-y-2 pl-6 text-base">
           {children}
         </ol>
       );
@@ -135,7 +129,7 @@ function renderNode(
       return (
         <blockquote
           key={key}
-          className="my-4 border-l-2 border-border-default pl-4 italic text-body-subtle"
+          className="my-5 border-l-[3px] border-safety-yellow pl-[18px] text-base italic text-body-subtle"
         >
           {children}
         </blockquote>
@@ -144,13 +138,18 @@ function renderNode(
       return (
         <pre
           key={key}
-          className="my-4 overflow-x-auto rounded-base border border-border-default bg-code-bg p-4 font-mono text-[13px] leading-relaxed text-code-text"
+          className="my-5 overflow-x-auto rounded-base border-2 border-border-default-strong bg-code-bg p-4 font-mono text-sm leading-relaxed text-code-text"
         >
           <code>{children}</code>
         </pre>
       );
     case "horizontalRule":
-      return <hr key={key} className="my-8 border-border-default-subtle" />;
+      return (
+        <hr
+          key={key}
+          className="my-10 border-t-2 border-dashed border-border-default-subtle"
+        />
+      );
     case "hardBreak":
       return <br key={key} />;
     case "media":
