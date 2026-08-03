@@ -131,8 +131,11 @@ def login() -> RedirectResponse:
         "redirect_uri": _redirect_uri(),
         "response_type": "code",
         "scope": "openid email profile",
-        "hd": settings.google_hosted_domain,  # hint only; callback re-checks
-        "prompt": "select_account",  # always show the picker; never reuse a session
+        # No "hd" hint here on purpose: with it, Google silently auto-picks a
+        # signed-in account when exactly one matches the domain. The account
+        # chooser must always appear, so the domain is enforced only where it
+        # actually counts — the `hd` claim check on the callback below.
+        "prompt": "select_account",
         "state": state,
     }
     response = RedirectResponse(f"{GOOGLE_AUTH_URL}?{urlencode(params)}")
