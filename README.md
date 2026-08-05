@@ -46,6 +46,8 @@ Great — students are welcome. Start here:
 - **[docs/good-first-issues.md](docs/good-first-issues.md)** — beginner-friendly tasks to pick from.
 - **[docs/setup.md](docs/setup.md)** — get the app running.
 
+Putting it on a real machine instead? See **[docs/deployment.md](docs/deployment.md)**.
+
 **Using an AI assistant (Copilot, Cursor, ChatGPT, Claude…) to write code? That's fine and encouraged.** Point it at [AGENTS.md](AGENTS.md), keep your changes small, make sure you understand what it wrote, and check that the automated tests pass before opening a pull request.
 
 ## Learn more

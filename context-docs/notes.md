@@ -619,9 +619,49 @@ Space Grotesk / DM Sans / JetBrains Mono) and adds a real motion layer. The
   the `hd` *claim* check on the callback, which is untouched. A non-uni
   account can now be picked, and is rejected there exactly as before.
 
+### Bug pass + deployment readiness (2026-08-05)
+
+- **The account chooser was a stale container, not a code bug.** The `hd`
+  hint had already been removed; a rebuilt image proves the request now
+  carries `prompt=select_account` and nothing else. `docker compose up -d`
+  without `--build` keeps serving the previously baked code, which is how the
+  old request survived the fix. The authorization URL is now pinned by
+  `test_login_always_asks_google_for_the_account_chooser`, so a regression
+  fails a test instead of being discovered by a user. If a rebuilt backend
+  still auto-selects, the cause is browser-side — a managed Chrome profile can
+  be policy-locked to one Google account, which no OAuth parameter overrides.
+- **Non-uni rejection was invisible.** The callback has always redirected to
+  `/?auth_error=non_uni_domain`, but nothing read that parameter — the user
+  landed on a normal home page, silently logged out, which reads as "login is
+  broken". The landing page now renders a `LOGIN_REJECTED.LOG` window.
+- **Download buttons were dead in Safari.** `window.open` ran *after* awaiting
+  the presigned URL, spending the user gesture, so popup blockers killed it.
+  The tab is now opened synchronously and pointed at the URL when it arrives.
+  This changed one e2e assertion: the popup starts at `about:blank`, so the
+  test waits for the URL rather than reading it immediately.
+- **The editor could silently lose a write-up.** Content only exists in the
+  browser until Save; leaving the page threw it away with no warning. Dirty
+  state now drives a `beforeunload` guard, and a stale "SAVED" badge is
+  cleared as soon as you type again.
+- Smaller fixes: dead `Settings.tool_category_list` (still referenced the
+  `tool_categories` setting deleted with lab ops — an `AttributeError` waiting
+  to happen), admin tabs given real `tabpanel` wiring plus arrow-key movement,
+  `rel="noopener noreferrer"` on the landing-preview link, and the editor's
+  link prompt now says why a bad URL was refused instead of dropping it.
+- **Deployment.** `docs/deployment.md` covers both stages (lab PC behind a
+  tunnel, then the university VM). Compose gained restart policies,
+  healthchecks, capped logs, and env-driven data paths — a bare name is a
+  Docker volume, an absolute path is a host bind mount, so one file serves a
+  laptop and a server. New `backup-files` service mirrors MinIO objects
+  through the S3 API (the `pg_dump` alone was never a backup of this app —
+  every photo and CAD file lives in MinIO); deliberately no `--remove`, so an
+  accidental delete does not propagate into the only surviving copy. nginx
+  gained security headers and an auth-only rate limit — general `/api/` is
+  left unthrottled on purpose because a university shares few NAT addresses.
+  `nginx-tls.conf` is the companion config for terminating TLS on the host.
+
 ### What's next
-**Go-live** — blocked on university IT providing the public route. The
-checklist (real Google OAuth credentials, public hostname for file URLs,
-production flags, 2 GB file limit, real staff list) is in handoff.md's
-Phase 8 paragraph. After that: point a browser at the real domain and run
-one upload/download to confirm presigned signatures survive the proxy.
+**Go-live** — follow `docs/deployment.md`. Stage 1 (lab PC + tunnel) needs no
+university involvement; Stage 2 needs IT to say who terminates HTTPS and what
+body-size limit their network imposes, since `MAX_FILE_SIZE` must sit below
+the smallest limit in the chain.

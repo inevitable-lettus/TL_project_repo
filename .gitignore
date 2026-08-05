@@ -23,3 +23,7 @@ backups/
 
 # Claude Code worktrees/session state (can contain per-worktree .env copies)
 .claude/
+
+# TLS material mounted into nginx — never commit private keys.
+nginx/certs/*
+!nginx/certs/README.md

@@ -48,6 +48,7 @@ Constraints, not prose. A readable, simple codebase is the goal — not a vibe-c
 - [context-docs/product.md](context-docs/product.md) — who it's for, the problem, user stories, what's out of scope for v1.
 - [context-docs/handoff.md](context-docs/handoff.md) — dependency-ordered build phases with a "done =" definition each.
 - [context-docs/notes.md](context-docs/notes.md) — plain-language developer notes (jargon explained, what each task built). Update alongside handoff.md after every task.
+- [docs/deployment.md](docs/deployment.md) — going live: public-address settings, HTTPS options, host data paths, backups/restore, go-live checks.
 
 ## How I like to work
 
