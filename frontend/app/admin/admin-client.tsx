@@ -17,6 +17,12 @@ import {
 
 type Tab = "curation" | "people" | "moderation";
 
+const TABS = [
+  ["curation", "Curation"],
+  ["people", "People"],
+  ["moderation", "Moderation"],
+] as const satisfies readonly (readonly [Tab, string])[];
+
 const tabClass = (active: boolean) =>
   "relative px-3.5 py-3 font-display text-xs font-bold uppercase tracking-[0.06em] " +
   "transition-colors duration-120 " +
@@ -45,26 +51,41 @@ export function AdminClient({
     }
   };
 
+  // Arrow keys move between tabs. Required by the roving tabindex below —
+  // without it only the selected tab is focusable and a keyboard user could
+  // never reach the other two.
+  const moveTab = (event: React.KeyboardEvent) => {
+    const delta =
+      event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+    if (delta === 0) return;
+    event.preventDefault();
+    const index = TABS.findIndex(([key]) => key === tab);
+    const next = TABS[(index + delta + TABS.length) % TABS.length][0];
+    setTab(next);
+    document.getElementById(`tab-${next}`)?.focus();
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-[860px] flex-col gap-6">
       <Window title="ADMIN.PANEL" floating bodyClassName="p-0">
         <nav
           role="tablist"
+          aria-label="Admin sections"
+          onKeyDown={moveTab}
           className="flex overflow-x-auto border-b-2 border-border-default-strong px-3"
         >
-          {(
-            [
-              ["curation", "Curation"],
-              ["people", "People"],
-              ["moderation", "Moderation"],
-            ] as const
-          ).map(([key, label]) => (
+          {TABS.map(([key, label]) => (
             <button
               key={key}
               type="button"
               role="tab"
+              id={`tab-${key}`}
               data-testid={`tab-${key}`}
               aria-selected={tab === key}
+              aria-controls="admin-tabpanel"
+              // Roving tabindex: the tablist is one stop, arrow keys move
+              // within it — otherwise Tab lands on every tab in turn.
+              tabIndex={tab === key ? 0 : -1}
               onClick={() => setTab(key)}
               className={tabClass(tab === key)}
             >
@@ -80,7 +101,12 @@ export function AdminClient({
             </button>
           ))}
         </nav>
-        <div className="p-5 md:p-6">
+        <div
+          role="tabpanel"
+          id="admin-tabpanel"
+          aria-labelledby={`tab-${tab}`}
+          className="p-5 md:p-6"
+        >
           {tab === "curation" && (
             <CurationTab
               initialFeatured={initialFeatured}
@@ -157,7 +183,12 @@ function CurationTab({
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="u-caps text-xl">Featured projects</h2>
-          <a href="/" target="_blank" className={buttonClass("tertiary")}>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonClass("tertiary")}
+          >
             Preview landing ↗
           </a>
         </div>

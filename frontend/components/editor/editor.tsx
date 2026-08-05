@@ -7,7 +7,7 @@ import {
   useEditorState,
   type Editor,
 } from "@tiptap/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { FileInfo, ProjectDetail, TipTapDoc } from "@/lib/types";
 import {
@@ -61,6 +61,12 @@ function Toolbar({
       chain.unsetLink().run();
     } else if (/^(https?:\/\/|mailto:)/.test(href)) {
       chain.setLink({ href }).run();
+    } else {
+      // The backend rejects any other scheme (projects.py ALLOWED_LINK_
+      // PREFIXES). Say so — silently dropping the link looks like a bug.
+      window.alert(
+        `Links must start with http://, https:// or mailto: — "${href}" was not added.`,
+      );
     }
   };
 
@@ -147,9 +153,24 @@ export function ProjectEditor({
   const [description, setDescription] = useState(project.description ?? "");
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [mediaState, setMediaState] = useState<UploadState | null>(null);
   const [mediaError, setMediaError] = useState<string | null>(null);
   const mediaInput = useRef<HTMLInputElement>(null);
+
+  // A long build log only exists in the browser until Save is pressed, so
+  // leaving the page with edits pending silently destroys it.
+  const touch = () => {
+    setDirty(true);
+    setStatus(null); // a stale "SAVED" next to unsaved edits is a lie
+  };
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   const editor = useEditor({
     extensions: [
@@ -161,6 +182,7 @@ export function ProjectEditor({
     ],
     content: project.content,
     immediatelyRender: false,
+    onUpdate: touch,
     editorProps: {
       attributes: {
         class:
@@ -203,6 +225,7 @@ export function ProjectEditor({
         content: editor.getJSON() as TipTapDoc,
       });
       setStatus("saved");
+      setDirty(false);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "save failed");
     } finally {
@@ -242,7 +265,10 @@ export function ProjectEditor({
           id="project-title"
           className={inputClass}
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            touch();
+          }}
           maxLength={200}
         />
       </Field>
@@ -251,7 +277,10 @@ export function ProjectEditor({
           id="project-description"
           className={`${inputClass} min-h-[64px] resize-y`}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            touch();
+          }}
           maxLength={500}
         />
       </Field>

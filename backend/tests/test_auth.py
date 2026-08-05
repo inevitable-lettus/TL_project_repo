@@ -1,5 +1,6 @@
 import uuid
 from datetime import UTC, datetime, timedelta
+from urllib.parse import parse_qs, urlparse
 
 import jwt
 import pytest
@@ -31,6 +32,16 @@ def test_login_redirects_to_google_with_state_cookie(client):
     assert response.status_code == 307
     assert response.headers["location"].startswith(auth.GOOGLE_AUTH_URL)
     assert auth.STATE_COOKIE in response.cookies
+
+
+def test_login_always_asks_google_for_the_account_chooser(client):
+    # An "hd" hint here makes Google auto-pick the single signed-in account
+    # that matches the domain, so the picker never appears. The domain is
+    # enforced by the hd *claim* check in the callback instead.
+    params = parse_qs(urlparse(client.get("/auth/login").headers["location"]).query)
+    assert params["prompt"] == ["select_account"]
+    assert "hd" not in params
+    assert "login_hint" not in params
 
 
 def test_callback_rejects_state_mismatch(client, db, monkeypatch):

@@ -121,7 +121,10 @@ test("download re-mints a working presigned link", async ({ page }) => {
   const popupPromise = page.waitForEvent("popup");
   await row.getByRole("button", { name: "Download" }).click();
   const popup = await popupPromise;
-  await popup.waitForLoadState();
+  // The tab is opened blank inside the click and pointed at the presigned URL
+  // once it arrives — opening it after the await loses the user gesture and
+  // popup blockers kill it. So wait for the navigation, don't read the URL.
+  await popup.waitForURL(/\/tinkerer-lab\//);
   expect(popup.url()).toContain("/tinkerer-lab/");
   const fetched = await page.request.get(popup.url());
   expect(fetched.ok()).toBeTruthy();

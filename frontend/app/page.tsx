@@ -9,7 +9,12 @@ import type { ProjectListItem } from "@/lib/types";
 // Landing = the lab's shop window, told in three beats: who we are
 // (README), what's on the bench (slideshow), what's worth studying
 // (featured, led by one big pick).
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ auth_error?: string }>;
+}) {
+  const { auth_error: authError } = await searchParams;
   const [slider, featured] = await Promise.all([api.slider(), api.featured()]);
   const covers = await coverUrlMap([...slider, ...featured]);
 
@@ -31,6 +36,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col gap-10 md:gap-20">
+      {authError === "non_uni_domain" && <NonUniDomainNotice />}
       {/* The hero sequences its own lines, so the window itself must not also
           reveal — nested reveals leave the inner children stuck at opacity 0. */}
       <Window
@@ -132,6 +138,34 @@ export default async function Home() {
         </Window>
       </section>
     </div>
+  );
+}
+
+// The callback redirects here with ?auth_error=non_uni_domain when the Google
+// account that came back isn't on the university's Workspace domain. Without
+// this the rejection is invisible — the user just lands back on the home page
+// still logged out, which reads as "login is broken".
+function NonUniDomainNotice() {
+  return (
+    <Window title="LOGIN_REJECTED.LOG" floating reveal={false}>
+      <div role="alert" data-testid="auth-error">
+        <SysLabel className="text-fg-danger">
+          ACCOUNT_NOT_ON_UNIVERSITY_DOMAIN
+        </SysLabel>
+        <h2 className="u-caps mt-3 text-xl">That account can&apos;t sign in</h2>
+        <p className="mt-3 max-w-[60ch] text-base text-body">
+          This archive only accepts university Google accounts. Personal Gmail
+          and other domains are turned away. Pick your university account and
+          try again — or ask lab staff if you think yours should work.
+        </p>
+        <a
+          href="/api/auth/login"
+          className={`mt-5 inline-flex ${buttonClass("primary")}`}
+        >
+          Try another account
+        </a>
+      </div>
+    </Window>
   );
 }
 

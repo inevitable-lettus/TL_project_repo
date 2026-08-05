@@ -42,10 +42,6 @@ class Settings(BaseSettings):
     auth_test_mode: bool = False
 
     @property
-    def tool_category_list(self) -> list[str]:
-        return [c.strip() for c in self.tool_categories.split(",") if c.strip()]
-
-    @property
     def staff_email_set(self) -> set[str]:
         return {e.strip().lower() for e in self.staff_emails.split(",") if e.strip()}
 
