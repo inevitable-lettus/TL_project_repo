@@ -72,17 +72,33 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --dev
-      # A service container can't pass `server /data`, and Docker Hub no longer
-      # serves minio/minio, so MinIO runs as a plain step from quay.io.
+      # MinIO no longer publishes images (Docker Hub and quay.io are gone, and
+      # dl.min.io returns 410), and a service container can't pass `server /data`
+      # anyway. Build the pinned upstream release (RELEASE.2025-10-15T17-29-55Z)
+      # from source and run it in a step; the binary is cached by commit.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+      - name: Cache MinIO binary
+        id: minio-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/minio-bin
+          key: minio-9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
+      - name: Build MinIO
+        if: steps.minio-cache.outputs.cache-hit != 'true'
+        run: GOBIN=$HOME/minio-bin go install github.com/minio/minio@9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
       - name: Start MinIO
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
         run: |
-          docker run -d --name minio -p 9000:9000 \
-            -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin \
-            quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+          nohup ~/minio-bin/minio server "$RUNNER_TEMP/minio-data" > "$RUNNER_TEMP/minio.log" 2>&1 &
           for i in $(seq 1 30); do
             curl -sf http://localhost:9000/minio/health/live && exit 0
             sleep 2
           done
-          docker logs minio
+          cat "$RUNNER_TEMP/minio.log"
           exit 1
       - run: uv run pytest
