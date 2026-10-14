@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import httpx
 import pytest
@@ -332,3 +332,36 @@ def test_mine_skips_row_that_is_not_an_object(monkeypatch, sheet, student):
 def test_httpx_does_not_log_script_url_at_info():
     # Pinned on the logger itself, so it holds even if root logging is at INFO.
     assert logging.getLogger("httpx").level == logging.WARNING
+
+
+def test_mine_sorts_naive_and_aware_timestamps(sheet, student):
+    # A hand-typed timestamp without a zone is read as UTC.
+    newer = seed_row(
+        sheet,
+        "asha@uni.edu",
+        status="returned",
+        borrowed_at="2026-02-20 09:00",
+        returned_at="2026-03-01 10:00",
+        return_photo="https://lab.example/loans/photo/n",
+    )
+    older = seed_row(
+        sheet,
+        "asha@uni.edu",
+        status="returned",
+        returned_at="2026-02-01T10:00:00Z",
+        return_photo="https://lab.example/loans/photo/a",
+    )
+    response = student.get("/loans/mine")
+    assert response.status_code == 200
+    mine = response.json()
+    assert [loan["loan_id"] for loan in mine] == [newer["loan_id"], older["loan_id"]]
+    assert datetime.fromisoformat(mine[0]["returned_at"]).utcoffset() == timedelta(0)
+
+
+@pytest.mark.parametrize("raw", ["evil\nINJECTED log line", "", None, 42])
+def test_skipped_row_log_only_shows_uuid_loan_ids(caplog, sheet, student, raw):
+    seed_row(sheet, "asha@uni.edu", loan_id=raw, due_date="")
+    with caplog.at_level(logging.ERROR, logger="backend.app.loans"):
+        assert student.get("/loans/mine").status_code == 200
+    assert "<invalid loan_id>" in caplog.text
+    assert "INJECTED" not in caplog.text
