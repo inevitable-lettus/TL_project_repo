@@ -42,6 +42,7 @@ def update_profile(
                 avatar is None
                 or avatar.owner_id != user.id
                 or avatar.project_id is not None
+                or avatar.kind != "media"
                 or avatar.status != "ready"
             ):
                 raise HTTPException(

@@ -38,8 +38,12 @@ def require_can_edit(project: Project, user: User) -> None:
 
 
 def require_file_view(file: File, user: User | None) -> None:
-    # User-scoped files (avatars) are public — profile pages are public.
-    if file.project_id is not None:
+    # Loan photos are private to their owner and staff; other user-scoped
+    # files (avatars) are public — profile pages are public.
+    if file.kind == "loan_photo":
+        if user is None or not (file.owner_id == user.id or user.role == "staff"):
+            raise HTTPException(status_code=404, detail="File not found")
+    elif file.project_id is not None:
         require_can_view(file.project, user)
 
 
