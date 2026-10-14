@@ -86,18 +86,35 @@ sequenceDiagram
 - Keep a clean **`get_current_user` dependency** so the auth mechanism stays swappable.
 - **Role is not in the Google token.** Plan for manual staff assignment via an allowlist/admin table. Default new users to `student`.
 
-## Removed: lab ops (machines, booking, tool checkout, issue reporting)
+## Borrowing log
+
+Students log materials they borrow from and return to the lab. A self-contained
+module (`/borrow` page, `/loans/*` API); no new DB tables.
+
+```
+Browser ──photo bytes──▶ MinIO              (existing presigned POST + confirm flow)
+Browser ──JSON──▶ FastAPI /loans/* ──httpx POST + shared secret──▶ Apps Script web app ──▶ Google Sheet
+Sheet "photo" cell ──link──▶ <PUBLIC_URL>/loans/photo/<id> (frontend) ──▶ presigned GET (owner/staff only)
+```
+
+- **FastAPI is the only Apps Script caller.** The browser never talks to it, or anyone could forge rows for any email. Name and email come from the session, never the request body.
+- **The Sheet is the only store of loan records.** Photos are ordinary `File` rows with `kind = "loan_photo"`, visible to their owner and staff only.
+- **Shared secret** lives in `.env` as `LOANS_SCRIPT_SECRET` and in the script's Script Properties as `LOANS_SECRET` — never in git. `LOANS_SCRIPT_URL` and the secret are set together or not at all; both empty disables borrowing (the site still boots).
+- Limits via env vars: `LOAN_MAX_DAYS` (furthest return-by date), `LOAN_PHOTO_MAX_SIZE` (bytes per photo).
+
+## Removed: lab ops (machines, booking, issue reporting)
 
 Built as "Track B" in v1.1, then **removed on 2026-08-02** — day-to-day lab
-operations belong to a different student's project, not this repo. This one
-is the project archive and nothing else.
+operations belong to a different student's project, not this repo. Tool
+checkout was among them; **borrowing was re-added on 2026-10-14** as the log
+above. The rest stays removed.
 
 Gone: the `/machines`, `/bookings`, `/checkouts`, `/issues` routers, the
 `bookings`/`checkouts`/`issues` tables (dropped in migration
 `0007_drop_lab_ops`, whose `downgrade()` recreates the schema if it is ever
 wanted back), the Google-Sheet-as-CMS read path, SMTP mail, and their env
 vars (`MACHINES_*`, `BOOKING_*`, `LAB_OPEN`/`LAB_CLOSE`, `TOOL_CATEGORIES`,
-`SMTP_*`). Don't reintroduce them here.
+`SMTP_*`). Don't reintroduce machines, booking or issue reporting here.
 
 ## Docker / nginx topology
 
@@ -119,6 +136,7 @@ All in a gitignored `.env`, read via Compose `env_file`.
 | MinIO root credentials | backend, minio |
 | Google OAuth client secret | backend |
 | JWT signing secret | backend |
+| Loans Apps Script shared secret (`LOANS_SCRIPT_SECRET`) | backend |
 
 ## Known gaps (loud, on purpose)
 
