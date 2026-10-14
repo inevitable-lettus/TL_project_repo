@@ -34,6 +34,12 @@ Backend scaffold (`backend/app/`): `config.py` (env-driven `Settings` — `datab
 
 Run (Docker): `cp .env.example .env`, then `docker compose up -d --build`; migrate with `docker compose exec backend alembic -c backend/alembic.ini upgrade head` (always invoke alembic from the repo root / container WORKDIR so `backend.app` imports); optional demo data via `docker compose exec backend python -m backend.app.seed`. App: `http://localhost/`, API health: `http://localhost/api/health`. Tests: `docker compose exec backend pytest` and `cd frontend && npm run e2e` (needs `ENVIRONMENT=test` + `AUTH_TEST_MODE=1` + `STAFF_EMAILS=staff@uni.edu` in `.env`).
 
+## Borrowing log (epic #7, started 2026-10-14)
+
+Students log materials they borrow and return; the log is a Google Sheet written by an Apps Script web app, with FastAPI as its only caller. Built on branch `claude/material-borrowing-logging-00aff2`, merging to `main` once verified end to end. See [architecture.md](architecture.md) "Borrowing log". Shipped so far: #9 scope docs + `LOANS_*`/`LOAN_*` config, #10 `apps-script/loans/` (script + setup README), #11 `POST /loans/photo` private upload slot, #12 `backend/app/loans.py` (`POST /loans`, `GET /loans/mine`, `POST /loans/{id}/return`) + fake Sheet, #13 `/borrow` page + `/loans/photo/[id]` redirect + e2e, #14 these docs.
+
+**Pending (human, issue #8):** choose the Google account that will own the Apps Script web app and the Sheet (a lab/staff account, not a student's), then run the "Anyone" web-app deploy check on the uni Workspace. Until then `LOANS_SCRIPT_URL` / `LOANS_SCRIPT_SECRET` stay empty (an obvious placeholder; borrowing is disabled and `/borrow` says so). No real URL or secret goes in the repo. Blocks real-Sheet testing and go-live of borrowing only.
+
 ## Session context — read this to resume (kept current at the end of every phase)
 
 - **Working tree**: work happens on branch `claude/project-review-architecture-92df3e` (worktree under `.claude/worktrees/`). `.env` is gitignored — copy it from the main repo checkout into the worktree before booting the stack. `frontend/node_modules` needs `npm ci` in a fresh worktree.
@@ -115,3 +121,8 @@ Migration 0002 (Phase 2):
 8. **Hardening + deploy**
    - nginx public MinIO S3 route (`client_max_body_size` raised, endpoint matches public URL), bucket CORS, `pg_dump` backup service, seed script (sample projects with images), full from-scratch E2E (`down -v && up && migrate && seed && test`), light load sanity (~100 concurrent browsers).
    - **done =** app reachable via the uni public route (pending IT); upload/download works end-to-end over the real domain; presigned signatures validate; full suite green from a clean boot.
+
+9. **Borrowing log** (epic #7; code merged, real-Sheet verification pending #8)
+   - Apps Script web app + Sheet (`apps-script/loans/`), private `loan_photo` upload slot, `/loans` API with a fake Sheet for dev (`uv run python -m backend.tests.fake_sheet`), `/borrow` page, `/loans/photo/[id]` redirect.
+   - **done =** (1) all backend + frontend checks green, no regressions; (2) on a phone against a real test Sheet: borrow (camera opens) → row appears with a working photo link → return with photo → row shows `returned`; (3) photo link opens for owner and staff, 404 for another student; (4) same `loan_id` submitted twice → one row, and an item named `=1+1` is stored as text; (5) `LOANS_SCRIPT_URL` unset → `/borrow` shows a clear "borrowing isn't set up yet" message and the rest of the site is unaffected.
+   - **Status:** items 1, 3 (by tests), 4 and 5 are covered by backend/e2e tests against the fake Sheet. Items 2 and 4 on a **real** Sheet and a real phone camera are not yet verified: waiting on the owning account (#8).

@@ -689,3 +689,60 @@ The student side of the borrowing log lives at `/borrow`. Plain-language tour:
   (`uv run python -m backend.tests.fake_sheet`, `LOANS_SCRIPT_URL` pointing at
   it) to also run borrow → view photo → return, the dropped-request retry and
   the API-error case.
+
+### Borrowing log: how the pieces fit (issues #9-#12, #14, epic #7)
+
+Plain-language tour of the backend side of borrowing. The student page is in
+the "Borrowing frontend" entry above.
+
+- **The Sheet is the database.** There is no `loans` table. A Google Sheet holds
+  one row per loan, and staff read it (or download it as .xlsx) to audit. What
+  it costs: every "my loans" request is a round trip to Google (about 1-3
+  seconds), and if Google or the script is down, borrow / return / list fail
+  with a clear error (502 or 503) and nothing is half-written. Staff who
+  hand-edit the `loan_id`, `email` or `status` cells can break lookups. If this
+  hurts, adding a Postgres table later is a contained change.
+- **Apps Script web app.** Apps Script is Google's small scripting service that
+  lives inside a Sheet. We deploy `apps-script/loans/Code.gs` as a "web app": it
+  gets its own URL and runs code when something POSTs to it. The browser never
+  calls that URL. If it did, anyone could forge a row claiming to be any email.
+  Only FastAPI calls it, and FastAPI fills in name and email from the logged-in
+  session, never from the request body.
+- **Shared secret.** "Anyone" can reach the web app URL, so every request must
+  carry a secret, which the script checks before anything else. It travels in
+  the JSON body, not an HTTP header, because Apps Script's `doPost` cannot read
+  request headers. It lives in `.env` as `LOANS_SCRIPT_SECRET` and in the
+  script's Script Properties as `LOANS_SECRET`, never in git (the repo is
+  public). The URL is kept out of git too, and the `httpx` logger is pinned to
+  WARNING so the URL never reaches INFO logs.
+- **Formula injection.** A spreadsheet runs text that starts with `=`, `+`, `-`
+  or `@` as a formula, so an item named `=IMPORTXML(...)` could phone home when
+  staff open the Sheet. Defence: the `Loans` tab is created with plain-text
+  columns, any stored string starting with those characters also gets a leading
+  `'`, and the script strips that guard apostrophe when reading, so `=1+1`
+  comes back literally.
+- **Idempotency key (`loan_id`).** The browser makes a random id the first time
+  you press Borrow and reuses it on a retry. The script looks the id up before
+  writing; if the row exists it answers `duplicate: true` and writes nothing. So
+  a timeout followed by a retry cannot create two rows. A writer lock stops two
+  simultaneous requests racing past that check.
+- **Not found looks the same either way.** Returning someone else's loan, or one
+  that does not exist, both give 404 "Loan not found", so nobody can probe which
+  ids exist.
+- **Bad rows do not break the list.** If staff blank out a cell, that row is
+  skipped and logged (UUID loan ids only, so cell text cannot inject log lines)
+  while the student's other loans still show. Hand-typed timestamps with no
+  time zone are read as UTC.
+- **Fake Sheet for local dev.** `uv run python -m backend.tests.fake_sheet`
+  serves an in-memory stand-in on port 8099 (secret `dev-secret`). Point
+  `LOANS_SCRIPT_URL` / `LOANS_SCRIPT_SECRET` in `.env` at it and the whole flow
+  works with no Google account. The backend tests use the same class.
+- **Loan photos** are ordinary private files in MinIO (`kind = "loan_photo"`),
+  visible to the owner and staff only. The Sheet stores a link to
+  `<PUBLIC_URL>/loans/photo/<id>`, so `PUBLIC_URL` must be the real public
+  address or those links break. While fixing this, a gap was closed: a loan
+  photo could have been set as a public avatar, so avatars must now be
+  `kind = "media"`.
+- **Still pending:** the Google account that will own the real Sheet is not
+  chosen yet (issue #8), so the "Anyone" deploy check on the uni Workspace and
+  the real-Sheet / real-phone test have not been done.

@@ -36,12 +36,26 @@ The **landing page** is the shop window: a large auto-advancing image slider (ad
 - View any student's profile page (only their public projects show).
 - Never see private projects (they don't appear and can't be opened).
 
-## Lab operations — removed 2026-08-02
+## Borrowing log (re-added 2026-10-14)
 
-Machines directory, machine booking, tool checkout and issue reporting were
-built in v1.1 and have been **removed**: they belong to a different student's
-project. This repo is the project archive only. See the note in
-[architecture.md](architecture.md) for exactly what was taken out.
+**Who:** students log what they borrow; staff read the log in a Google Sheet (and can download it as .xlsx).
+
+**Problem:** the lab has no record of who has which material or equipment, or in what condition it went out and came back.
+
+**User stories**
+
+- _Student:_ borrow an item — take a photo, enter item name, quantity, return-by date and reason; the loan is logged.
+- _Student:_ see my open loans (overdue ones flagged) and return one with a condition photo and an optional note.
+- _Staff:_ audit every loan, with both photos, in the Sheet. Loan photos are private to the borrower and staff.
+
+**Out of scope:** showing loans on the student profile (planned next), overdue reminders/emails, an item catalog, inventory counts, an in-app staff view. Borrowing is optional: with no Sheet configured the page says it isn't set up and the rest of the site is unaffected. Pending (human): the owning Google account for the Sheet is not chosen yet, see [handoff.md](handoff.md) (issue #8).
+
+## Other lab operations — removed 2026-08-02
+
+Machines directory, machine booking and issue reporting (and the first tool
+checkout) were built in v1.1 and have been **removed**: they belong to a
+different student's project. See the note in [architecture.md](architecture.md)
+for exactly what was taken out.
 
 ## Out of scope for v1 (explicit — do not assume these)
 

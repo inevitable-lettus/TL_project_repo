@@ -313,6 +313,18 @@ Work down this list against the public address, not `localhost`.
     contains a `.dump` file and an `objects/` directory.
 11. **It survives a reboot.** Reboot the machine and confirm the site returns
     without anyone logging in.
+12. **Borrowing log (optional feature).** Skip this to ship without it:
+    `/borrow` then says "Borrowing isn't set up yet" and nothing else changes.
+    To turn it on:
+    - Deploy the Apps Script by following `apps-script/loans/README.md`
+      (needs the owning lab/staff Google account, still being chosen, issue #8).
+    - Set `LOANS_SCRIPT_URL` and `LOANS_SCRIPT_SECRET` in `.env` (both or
+      neither; the app refuses to start with only one), then restart the backend.
+    - `PUBLIC_URL` must be the real public address: the photo links written to
+      the Sheet are built from it.
+    - Smoke test: sign in, open `/borrow`, borrow an item with a photo, check
+      the row and its photo link in the Sheet, open the link as yourself (works)
+      and as another student (404), then return the item.
 
 ---
 
