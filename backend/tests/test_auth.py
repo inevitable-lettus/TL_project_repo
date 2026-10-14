@@ -196,3 +196,30 @@ def test_settings_refuse_test_mode_outside_test_env():
 def test_settings_refuse_short_jwt_secret():
     with pytest.raises(ValueError, match="JWT_SECRET"):
         make_settings(jwt_secret="too-short")
+
+
+def test_settings_loans_default_to_disabled():
+    cfg = make_settings()
+    assert not cfg.loans_enabled
+
+
+def test_settings_accept_loans_url_and_secret_together():
+    cfg = make_settings(
+        loans_script_url="https://script.example/exec", loans_script_secret="s"
+    )
+    assert cfg.loans_enabled
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [{"loans_script_url": "https://script.example/exec"}, {"loans_script_secret": "s"}],
+)
+def test_settings_refuse_half_configured_loans(overrides):
+    with pytest.raises(ValueError, match="LOANS_SCRIPT_URL.*LOANS_SCRIPT_SECRET"):
+        make_settings(**overrides)
+
+
+@pytest.mark.parametrize("field", ["loan_max_days", "loan_photo_max_size"])
+def test_settings_refuse_non_positive_loan_limits(field):
+    with pytest.raises(ValueError, match=field.upper()):
+        make_settings(**{field: 0})
