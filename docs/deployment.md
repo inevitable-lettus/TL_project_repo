@@ -392,7 +392,7 @@ docker compose exec -T db pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --cle
 Files, from inside the `backup-files` container:
 
 ```bash
-docker compose exec backup-files mc mirror --overwrite /backups/objects "store/$MINIO_BUCKET"
+docker compose exec backup-files mcli mirror --overwrite /backups/objects "store/$MINIO_BUCKET"
 ```
 
 Then reload a project page and confirm its cover image appears — that exercises
