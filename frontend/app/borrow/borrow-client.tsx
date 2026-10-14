@@ -12,7 +12,7 @@ import {
   SysLabel,
   Window,
 } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import type { Loan } from "@/lib/types";
 import {
@@ -21,6 +21,9 @@ import {
   type UploadState,
 } from "@/lib/upload";
 import { PhotoPicker } from "./photo-picker";
+
+// inputClass is 36px high; tap targets on this phone-first page are 44px.
+const fieldClass = `${inputClass} min-h-11`;
 
 function localToday(): string {
   const now = new Date();
@@ -146,7 +149,7 @@ function BorrowForm({ onCreated }: { onCreated: (loan: Loan) => void }) {
         <Field id="borrow-item" label="Item">
           <input
             id="borrow-item"
-            className={inputClass}
+            className={fieldClass}
             value={itemName}
             maxLength={120}
             placeholder="e.g. Soldering iron"
@@ -161,7 +164,7 @@ function BorrowForm({ onCreated }: { onCreated: (loan: Loan) => void }) {
               inputMode="numeric"
               min={1}
               max={999}
-              className={inputClass}
+              className={fieldClass}
               value={quantity}
               onChange={(event) => setQuantity(event.target.value)}
             />
@@ -172,7 +175,7 @@ function BorrowForm({ onCreated }: { onCreated: (loan: Loan) => void }) {
               type="date"
               min={today}
               suppressHydrationWarning // server and browser dates can differ
-              className={inputClass}
+              className={fieldClass}
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
             />
@@ -181,7 +184,7 @@ function BorrowForm({ onCreated }: { onCreated: (loan: Loan) => void }) {
         <Field id="borrow-reason" label="Reason">
           <textarea
             id="borrow-reason"
-            className={inputClass}
+            className={fieldClass}
             rows={3}
             maxLength={500}
             placeholder="What is it for?"
@@ -227,10 +230,15 @@ function ReturnForm({
   const submit = async () => {
     if (!photo) return;
     await attempt.run(photo, async (photoFileId) => {
-      await api.returnLoan(loan.loan_id, {
-        photo_file_id: photoFileId,
-        condition_note: note.trim(),
-      });
+      try {
+        await api.returnLoan(loan.loan_id, {
+          photo_file_id: photoFileId,
+          condition_note: note.trim(),
+        });
+      } catch (error) {
+        // An earlier try already returned it and only the refetch failed.
+        if (!(error instanceof ApiError && error.status === 409)) throw error;
+      }
       await onReturned();
     });
   };
@@ -256,7 +264,7 @@ function ReturnForm({
         <Field id={noteId} label="Condition note (optional)">
           <textarea
             id={noteId}
-            className={inputClass}
+            className={fieldClass}
             rows={2}
             maxLength={500}
             value={note}

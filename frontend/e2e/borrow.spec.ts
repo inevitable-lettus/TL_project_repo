@@ -25,6 +25,17 @@ test("signed-out /borrow sends the visitor to log in", async ({ request }) => {
   expect(response.headers()["location"]).toContain("/api/auth/login");
 });
 
+test("signed-out photo link sends the visitor to log in, not a 404", async ({
+  request,
+}) => {
+  const response = await request.get(
+    "/loans/photo/00000000-0000-4000-8000-000000000000",
+    { maxRedirects: 0 },
+  );
+  expect(response.status()).toBe(307);
+  expect(response.headers()["location"]).toContain("/api/auth/login");
+});
+
 test("signed-in /borrow shows the log window", async ({ browser }) => {
   const context = await browser.newContext();
   await testLogin(context.request, `borrower-${suffix}@uni.edu`, "Borrower");
@@ -153,6 +164,55 @@ test.describe("borrow and return (needs the fake Sheet)", () => {
       () => document.documentElement.scrollWidth > window.innerWidth,
     );
     expect(overflow).toBe(false);
+    await context.close();
+  });
+
+  test("form fields meet the 44px tap target", async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 360, height: 740 },
+    });
+    await testLogin(context.request, `tap-${suffix}@uni.edu`, "Tap");
+    const page = await context.newPage();
+    await page.goto("/borrow");
+    for (const label of ["Item", "Quantity", "Return by", "Reason"]) {
+      const box = await page.getByLabel(label).boundingBox();
+      expect(box!.height, label).toBeGreaterThanOrEqual(44);
+    }
+    await context.close();
+  });
+
+  test("a return whose refetch failed is retried as success, not a 409", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    await testLogin(context.request, `refetch-${suffix}@uni.edu`, "Refetch");
+    const page = await context.newPage();
+    await page.goto("/borrow");
+
+    await page.getByTestId("borrow-photo-input").setInputFiles(photo);
+    await page.getByLabel("Item").fill(`Refetch item ${suffix}`);
+    await page.getByLabel("Return by").fill(inDays(2));
+    await page.getByLabel("Reason").fill("Refetch failure");
+    await page.getByRole("button", { name: "Borrow", exact: true }).click();
+    const loan = page.getByTestId("open-loan").filter({
+      hasText: `Refetch item ${suffix}`,
+    });
+    await expect(loan).toBeVisible();
+
+    // The return POST succeeds; only the follow-up GET /loans/mine dies.
+    await page.route("**/api/loans/mine", (route) => route.abort());
+    await loan.getByRole("button", { name: "Return" }).click();
+    await loan.getByTestId("return-photo-input").setInputFiles(photo);
+    const confirm = loan.getByRole("button", { name: "Confirm return" });
+    await confirm.click();
+    await expect(loan.getByTestId("upload-error")).toBeVisible();
+
+    await page.unroute("**/api/loans/mine");
+    await confirm.click(); // server answers 409; the UI treats it as done
+    await expect(loan).toHaveCount(0);
+    await expect(page.getByTestId("returned-loans")).toContainText(
+      "Returned (1)",
+    );
     await context.close();
   });
 });
