@@ -31,6 +31,7 @@ The screens and behaviors. **Visual styling — typography, color, spacing, comp
 - `is_public` lives on the **Project** (not per-file). Toggling it is a **pure DB write** — no file moves, no re-keying.
 - **Anonymous visitor**: sees only `is_public=true` projects in browse and can open them. Private projects 404/forbidden — don't reveal they exist.
 - **Owner / staff**: see private projects too.
+- **Loan photos** (`kind = "loan_photo"`, borrowing log) are private to the borrower and staff, always: anyone else gets 404, even signed out. Only staff can delete one; the borrower cannot. They are never attached to a project or profile.
 - A project flipping public→private immediately stops new presigned URLs being minted for non-owners. Existing short-lived URLs expire on their own (minutes) — acceptable, no permanent links to revoke.
 
 ## Upload UX (pending → ready)
@@ -43,5 +44,7 @@ The upload is multi-step under the hood (presigned PUT → confirm). Surface sta
 - **Failed / rejected** — oversized (caught at one of three points) or confirm error. Show the limit; let the user retry. Orphaned objects from abandoned uploads are swept by the cleanup job — the user doesn't manage that.
 
 Oversize messaging maps to the three enforcement points: rejected before upload starts (declared-size), rejected mid-upload by MinIO (content-length-range), or rejected at confirm (actual size). All three should surface the same plain "file exceeds N GB limit" message.
+
+**Loan photos** upload on **Submit**, not on capture: choosing a photo only previews it locally, so an abandoned form leaves nothing in storage. The photo is downscaled in the browser, uploaded through this same flow, then the loan is saved. A retry reuses the already-uploaded photo.
 
 **Download links are not cached client-side** — presigned URLs expire. If a user leaves a project open and clicks download later, the frontend re-mints the URL on click rather than reusing a stale one (a stale URL returns 403).
