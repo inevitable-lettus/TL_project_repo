@@ -286,3 +286,49 @@ def test_photo_url_uses_public_url(monkeypatch):
     monkeypatch.setattr(settings, "public_url", "https://lab.example.edu")
     file_id = uuid.uuid4()
     assert loans.photo_url(file_id) == f"https://lab.example.edu/loans/photo/{file_id}"
+
+
+@pytest.mark.parametrize("body", [{"ok": True}, {"ok": True, "loans": None}])
+def test_mine_malformed_loans_is_502(monkeypatch, sheet, student, body):
+    route_script_calls(
+        monkeypatch, lambda _: httpx.Response(200, json=body, request=REQUEST)
+    )
+    response = student.get("/loans/mine")
+    assert response.status_code == 502
+    assert response.json()["detail"] == loans.SHEET_UNAVAILABLE
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"due_date": ""},
+        {"borrowed_at": ""},
+        {"quantity": ""},
+        {"status": "Out"},
+        {"item": None, "due_date": None},
+    ],
+)
+def test_mine_skips_hand_edited_bad_row(caplog, sheet, student, bad):
+    good = seed_row(sheet, "asha@uni.edu")
+    broken = seed_row(sheet, "asha@uni.edu", **bad)
+    with caplog.at_level(logging.ERROR, logger="backend.app.loans"):
+        response = student.get("/loans/mine")
+    assert response.status_code == 200
+    assert [loan["loan_id"] for loan in response.json()] == [good["loan_id"]]
+    assert broken["loan_id"] in caplog.text
+
+
+def test_mine_skips_row_that_is_not_an_object(monkeypatch, sheet, student):
+    good = seed_row(sheet, "asha@uni.edu")
+    listed = {"ok": True, "loans": [dict(good), "garbage", None]}
+    route_script_calls(
+        monkeypatch, lambda _: httpx.Response(200, json=listed, request=REQUEST)
+    )
+    response = student.get("/loans/mine")
+    assert response.status_code == 200
+    assert [loan["loan_id"] for loan in response.json()] == [good["loan_id"]]
+
+
+def test_httpx_does_not_log_script_url_at_info():
+    # Pinned on the logger itself, so it holds even if root logging is at INFO.
+    assert logging.getLogger("httpx").level == logging.WARNING

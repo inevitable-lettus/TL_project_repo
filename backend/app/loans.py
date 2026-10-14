@@ -18,6 +18,8 @@ from .models import File, User
 
 router = APIRouter(prefix="/loans", tags=["loans"])
 logger = logging.getLogger(__name__)
+# httpx logs every request URL at INFO; the Apps Script URL must stay private.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 SHEET_UNAVAILABLE = "The borrowing log is unavailable — try again in a minute."
 RETURN_ERRORS = {"not_found", "already_returned"}
@@ -205,8 +207,21 @@ def create_loan(
 
 @router.get("/mine", response_model=list[LoanOut])
 def my_loans(user: User = Depends(get_current_user)) -> list[LoanOut]:
-    body = call_sheet("list", {"email": user.email})
-    return sort_loans([to_loan_out(row) for row in body["loans"]])
+    rows = call_sheet("list", {"email": user.email}).get("loans")
+    if not isinstance(rows, list):
+        raise sheet_failure("list", "loans missing or not a list")
+    loans = []
+    for row in rows:
+        try:
+            loans.append(to_loan_out(row))
+        # Staff can hand-edit the Sheet: one bad row must not break the whole
+        # list. pydantic's ValidationError is a ValueError.
+        except (KeyError, TypeError, ValueError) as error:
+            loan_id = row.get("loan_id") if isinstance(row, dict) else None
+            logger.error(
+                "loans sheet list: skipped row %s: %s", loan_id, type(error).__name__
+            )
+    return sort_loans(loans)
 
 
 @router.post("/{loan_id}/return", status_code=204)
