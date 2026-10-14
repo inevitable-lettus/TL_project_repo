@@ -10,6 +10,7 @@ from .admin import router as admin_router
 from .auth import router as auth_router
 from .db import engine
 from .files import router as files_router
+from .loans import router as loans_router
 from .projects import router as projects_router
 from .storage import ensure_bucket
 from .users import router as users_router
@@ -40,6 +41,7 @@ app.include_router(files_router)
 app.include_router(projects_router)
 app.include_router(users_router)
 app.include_router(admin_router)
+app.include_router(loans_router)
 
 
 @app.get("/health")
