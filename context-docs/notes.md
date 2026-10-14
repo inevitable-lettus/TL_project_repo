@@ -684,6 +684,14 @@ The student side of the borrowing log lives at `/borrow`. Plain-language tour:
 - **Photo links from the Sheet** point at `/loans/photo/<id>`, a frontend page
   with no UI: it asks the backend for a short-lived download link using your
   own login, then redirects. Only the owner and staff get an image.
+- **Return is safe to retry.** If the return went through but the list refresh
+  after it failed, pressing Confirm again gets a 409 "already returned". The
+  page treats that 409 as success and just refreshes the list.
+- **Signed-out photo links** send you to Google sign-in (the backend answers
+  404 to anonymous callers, which used to show the "not found" page).
+- **Tap targets.** The `/borrow` text fields are at least 44px tall. This is
+  scoped to `/borrow` (`fieldClass` in `borrow-client.tsx`); the shared
+  `inputClass` is unchanged, so other pages keep their 36px fields.
 - Tests: `frontend/e2e/borrow.spec.ts`. The default run checks the page shell
   (CI has no Sheet). Set `E2E_LOANS=1` with the fake Sheet running
   (`uv run python -m backend.tests.fake_sheet`, `LOANS_SCRIPT_URL` pointing at

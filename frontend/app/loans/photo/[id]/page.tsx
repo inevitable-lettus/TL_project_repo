@@ -10,7 +10,12 @@ export default async function LoanPhotoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const cookie = (await cookies()).toString();
+  const cookieStore = await cookies();
+  // The backend answers 404, not 401, to an anonymous file request, so a
+  // signed-out visitor (e.g. staff with an expired session) would see "not
+  // found". Send them to log in before asking.
+  if (!cookieStore.has("session")) redirect("/api/auth/login");
+  const cookie = cookieStore.toString();
   let url: string;
   try {
     url = (await api.downloadUrl(id, cookie)).url;
