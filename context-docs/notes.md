@@ -665,3 +665,27 @@ Space Grotesk / DM Sans / JetBrains Mono) and adds a real motion layer. The
 university involvement; Stage 2 needs IT to say who terminates HTTPS and what
 body-size limit their network imposes, since `MAX_FILE_SIZE` must sit below
 the smallest limit in the chain.
+
+### Borrowing frontend (issue #13, epic #7)
+The student side of the borrowing log lives at `/borrow`. Plain-language tour:
+- **Take photo** is a hidden file input with `capture="environment"`. On a
+  phone that opens the rear camera; on a desktop it is just a file picker. The
+  photo is only *previewed* at that point. It is downscaled and uploaded when
+  you press Borrow (same three-step presigned flow as avatars, bytes go
+  straight to MinIO), then `POST /loans` is called. Nothing is left behind if
+  you walk away from the form.
+- **Retries are safe.** The form makes one random id (`loan_id`) the first time
+  you submit and keeps it until the loan succeeds. If the network drops, you
+  press Borrow again: the same id goes out, so the server cannot create a
+  second loan. The already-uploaded photo is reused too, not uploaded again.
+- **Not configured.** If lab staff have not set up the Google Sheet, the
+  backend answers 503 and the page shows "Borrowing isn't set up yet" rather
+  than the error screen. The rest of the site is unaffected.
+- **Photo links from the Sheet** point at `/loans/photo/<id>`, a frontend page
+  with no UI: it asks the backend for a short-lived download link using your
+  own login, then redirects. Only the owner and staff get an image.
+- Tests: `frontend/e2e/borrow.spec.ts`. The default run checks the page shell
+  (CI has no Sheet). Set `E2E_LOANS=1` with the fake Sheet running
+  (`uv run python -m backend.tests.fake_sheet`, `LOANS_SCRIPT_URL` pointing at
+  it) to also run borrow → view photo → return, the dropped-request retry and
+  the API-error case.

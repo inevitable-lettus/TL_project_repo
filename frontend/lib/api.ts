@@ -1,5 +1,6 @@
 import type {
   DownloadUrl,
+  Loan,
   Profile,
   ProjectDetail,
   ProjectListItem,
@@ -55,6 +56,7 @@ async function request<T>(
     }
     throw new ApiError(response.status, detail);
   }
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
@@ -103,6 +105,24 @@ export const api = {
     }),
   avatarSlot: (body: { filename: string; size: number; mime_type: string }) =>
     request<UploadSlot>("/users/me/avatar", { method: "POST", body }),
+  loanPhotoSlot: (body: {
+    filename: string;
+    size: number;
+    mime_type: string;
+  }) => request<UploadSlot>("/loans/photo", { method: "POST", body }),
+  createLoan: (body: {
+    loan_id: string;
+    item_name: string;
+    quantity: number;
+    due_date: string;
+    reason: string;
+    photo_file_id: string;
+  }) => request<Loan>("/loans", { method: "POST", body }),
+  myLoans: (cookie?: string) => request<Loan[]>("/loans/mine", { cookie }),
+  returnLoan: (
+    loanId: string,
+    body: { photo_file_id: string; condition_note: string },
+  ) => request<void>(`/loans/${loanId}/return`, { method: "POST", body }),
   confirmUpload: (fileId: string) =>
     request<UploadSlot["file"]>(`/files/${fileId}/confirm`, { method: "POST" }),
   deleteFile: (fileId: string) =>

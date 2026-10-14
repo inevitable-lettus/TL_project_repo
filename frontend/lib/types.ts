@@ -69,3 +69,18 @@ export type DownloadUrl = {
   size: number;
   mime_type: string;
 };
+
+export type Loan = {
+  loan_id: string;
+  borrowed_at: string;
+  item_name: string;
+  quantity: number;
+  reason: string;
+  due_date: string;
+  status: "out" | "returned";
+  overdue: boolean;
+  returned_at: string | null;
+  borrow_photo_url: string;
+  return_photo_url: string | null;
+  return_note: string | null;
+};
