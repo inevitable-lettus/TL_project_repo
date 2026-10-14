@@ -132,18 +132,36 @@ def utc_now_iso() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def utc_timestamp(value: str | None) -> datetime | None:
+    # A hand-typed cell may lack a zone; treat it as UTC so it still sorts
+    # against the script's own (aware) timestamps.
+    if value is None:
+        return None
+    parsed = datetime.fromisoformat(value)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def loggable_loan_id(row: object) -> str:
+    # The cell can be hand-edited to any text; only log it if it is a UUID.
+    raw = row.get("loan_id") if isinstance(row, dict) else None
+    try:
+        return str(uuid.UUID(str(raw)))
+    except ValueError:
+        return "<invalid loan_id>"
+
+
 def to_loan_out(row: dict) -> LoanOut:
     due = date.fromisoformat(row["due_date"])
     return LoanOut(
         loan_id=row["loan_id"],
-        borrowed_at=row["borrowed_at"],
+        borrowed_at=utc_timestamp(row["borrowed_at"]),
         item_name=row["item"],
         quantity=row["quantity"],
         reason=row["reason"],
         due_date=due,
         status=row["status"],
         overdue=row["status"] == "out" and due < date.today(),
-        returned_at=row["returned_at"],
+        returned_at=utc_timestamp(row["returned_at"]),
         borrow_photo_url=row["borrow_photo"],
         return_photo_url=row["return_photo"],
         return_note=row["return_note"],
@@ -217,9 +235,10 @@ def my_loans(user: User = Depends(get_current_user)) -> list[LoanOut]:
         # Staff can hand-edit the Sheet: one bad row must not break the whole
         # list. pydantic's ValidationError is a ValueError.
         except (KeyError, TypeError, ValueError) as error:
-            loan_id = row.get("loan_id") if isinstance(row, dict) else None
             logger.error(
-                "loans sheet list: skipped row %s: %s", loan_id, type(error).__name__
+                "loans sheet list: skipped row %s: %s",
+                loggable_loan_id(row),
+                type(error).__name__,
             )
     return sort_loans(loans)
 
