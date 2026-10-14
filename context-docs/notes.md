@@ -691,8 +691,10 @@ The student side of the borrowing log lives at `/borrow`. Plain-language tour:
   the API-error case.
 
 ### Borrowing log: how the pieces fit (issues #9-#12, #14, epic #7)
+
 Plain-language tour of the backend side of borrowing. The student page is in
 the "Borrowing frontend" entry above.
+
 - **The Sheet is the database.** There is no `loans` table. A Google Sheet holds
   one row per loan, and staff read it (or download it as .xlsx) to audit. What
   it costs: every "my loans" request is a round trip to Google (about 1-3
@@ -744,4 +746,3 @@ the "Borrowing frontend" entry above.
 - **Still pending:** the Google account that will own the real Sheet is not
   chosen yet (issue #8), so the "Anyone" deploy check on the uni Workspace and
   the real-Sheet / real-phone test have not been done.
-

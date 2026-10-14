@@ -43,9 +43,10 @@ The **landing page** is the shop window: a large auto-advancing image slider (ad
 **Problem:** the lab has no record of who has which material or equipment, or in what condition it went out and came back.
 
 **User stories**
-- *Student:* borrow an item — take a photo, enter item name, quantity, return-by date and reason; the loan is logged.
-- *Student:* see my open loans (overdue ones flagged) and return one with a condition photo and an optional note.
-- *Staff:* audit every loan, with both photos, in the Sheet. Loan photos are private to the borrower and staff.
+
+- _Student:_ borrow an item — take a photo, enter item name, quantity, return-by date and reason; the loan is logged.
+- _Student:_ see my open loans (overdue ones flagged) and return one with a condition photo and an optional note.
+- _Staff:_ audit every loan, with both photos, in the Sheet. Loan photos are private to the borrower and staff.
 
 **Out of scope:** showing loans on the student profile (planned next), overdue reminders/emails, an item catalog, inventory counts, an in-app staff view. Borrowing is optional: with no Sheet configured the page says it isn't set up and the rest of the site is unaffected. Pending (human): the owning Google account for the Sheet is not chosen yet, see [handoff.md](handoff.md) (issue #8).
 
