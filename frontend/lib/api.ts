@@ -1,6 +1,8 @@
 import type {
   DownloadUrl,
   Loan,
+  LoanRules,
+  LoanType,
   Profile,
   ProjectDetail,
   ProjectListItem,
@@ -110,19 +112,22 @@ export const api = {
     size: number;
     mime_type: string;
   }) => request<UploadSlot>("/loans/photo", { method: "POST", body }),
+  loanRules: (cookie?: string) =>
+    request<LoanRules>("/loans/rules", { cookie }),
   createLoan: (body: {
-    loan_id: string;
+    id: string;
+    type: LoanType;
     item_name: string;
+    description: string;
     quantity: number;
-    due_date: string;
-    reason: string;
-    photo_file_id: string;
+    unit: string;
+    project_id: string | null;
+    due_date: string | null;
+    photo_file_ids: string[];
   }) => request<Loan>("/loans", { method: "POST", body }),
   myLoans: (cookie?: string) => request<Loan[]>("/loans/mine", { cookie }),
-  returnLoan: (
-    loanId: string,
-    body: { photo_file_id: string; condition_note: string },
-  ) => request<void>(`/loans/${loanId}/return`, { method: "POST", body }),
+  returnLoan: (loanId: string, body: { photo_file_id: string; note: string }) =>
+    request<Loan>(`/loans/${loanId}/return`, { method: "POST", body }),
   confirmUpload: (fileId: string) =>
     request<UploadSlot["file"]>(`/files/${fileId}/confirm`, { method: "POST" }),
   deleteFile: (fileId: string) =>

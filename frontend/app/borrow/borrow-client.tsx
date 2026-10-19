@@ -14,47 +14,67 @@ import {
 } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
-import type { Loan } from "@/lib/types";
+import type { Loan, LoanRules, LoanType } from "@/lib/types";
 import {
   uploadErrorMessage,
   uploadLoanPhoto,
   type UploadState,
 } from "@/lib/upload";
+import { dropPhotos, PhotoGrid, type PickedPhoto } from "./photo-grid";
 import { PhotoPicker } from "./photo-picker";
 
 // inputClass is 36px high; tap targets on this phone-first page are 44px.
 const fieldClass = `${inputClass} min-h-11`;
 
-function localToday(): string {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
+type ProjectOption = { id: string; title: string };
+type Photo = { key: string; file: File };
+
+function localDate(offsetDays = 0): string {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
-// One submit attempt: upload the photo, then call the API. The photo id and
-// the client-generated id are kept across failures so a retry neither uploads
-// again nor creates a second record; `reset` forgets them after success or
-// when the photo changes.
+function amount(loan: Loan): string {
+  return `${loan.quantity} ${loan.unit}`;
+}
+
+// One submit attempt: upload the photos, then call the API. Uploaded photo
+// ids (per picked photo) and the client-generated id survive a failure, so a
+// retry neither uploads again nor creates a second record. A second submit
+// while one is in flight is ignored.
 function useAttempt() {
   const [state, setState] = useState<UploadState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const photoId = useRef<string | null>(null);
+  const inFlight = useRef(false);
+  const uploaded = useRef(new Map<string, string>());
   const attemptId = useRef<string | null>(null);
 
   const run = async (
-    photo: File,
-    act: (photoFileId: string, attemptId: string) => Promise<void>,
+    photos: Photo[],
+    act: (photoFileIds: string[], attemptId: string) => Promise<void>,
   ): Promise<boolean> => {
+    if (inFlight.current) return false;
+    inFlight.current = true;
     setBusy(true);
     setError(null);
     try {
-      photoId.current ??= (await uploadLoanPhoto(photo, setState)).id;
+      const ids: string[] = [];
+      for (const photo of photos) {
+        let id = uploaded.current.get(photo.key);
+        if (!id) {
+          id = (await uploadLoanPhoto(photo.file, setState)).id;
+          uploaded.current.set(photo.key, id);
+        }
+        ids.push(id);
+      }
       setState(null);
       attemptId.current ??= crypto.randomUUID();
-      await act(photoId.current, attemptId.current);
-      photoId.current = null;
+      await act(ids, attemptId.current);
+      uploaded.current.clear();
       attemptId.current = null;
       return true;
     } catch (caught) {
@@ -63,57 +83,116 @@ function useAttempt() {
     } finally {
       setState(null);
       setBusy(false);
+      inFlight.current = false;
     }
   };
 
-  const forgetPhoto = () => {
-    photoId.current = null;
+  const forgetPhoto = (key: string) => {
+    uploaded.current.delete(key);
   };
 
   return { state, error, busy, run, forgetPhoto };
 }
 
-function BorrowForm({ onCreated }: { onCreated: (loan: Loan) => void }) {
+function TypeToggle({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: LoanType;
+  disabled: boolean;
+  onChange: (type: LoanType) => void;
+}) {
+  const options: [LoanType, string][] = [
+    ["equipment", "Equipment"],
+    ["material", "Material"],
+  ];
+  return (
+    <fieldset>
+      <legend className="mb-1.5 block font-display text-sm font-semibold text-heading">
+        Type
+      </legend>
+      <div className="grid grid-cols-2 gap-3">
+        {options.map(([type, label]) => (
+          <Button
+            key={type}
+            type="button"
+            variant={value === type ? "primary" : "tertiary"}
+            className="min-h-11"
+            aria-pressed={value === type}
+            disabled={disabled}
+            onClick={() => onChange(type)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+      <p className="mt-1.5 text-sm text-body-subtle">
+        {value === "equipment"
+          ? "Comes back to the lab: pick a return date."
+          : "Used up (filament, sheet, wire): no return."}
+      </p>
+    </fieldset>
+  );
+}
+
+function BorrowForm({
+  rules,
+  projects,
+  onCreated,
+}: {
+  rules: LoanRules;
+  projects: ProjectOption[];
+  onCreated: (loan: Loan) => void;
+}) {
   const attempt = useAttempt();
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [type, setType] = useState<LoanType>("equipment");
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [unit, setUnit] = useState(rules.units[0]);
+  const [projectId, setProjectId] = useState("");
+  const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [reason, setReason] = useState("");
-  const [today] = useState(localToday);
-  const [pickerKey, setPickerKey] = useState(0);
+  const [today] = useState(() => localDate());
+  const [lastDay] = useState(() => localDate(rules.max_days));
   const [confirmed, setConfirmed] = useState<string | null>(null);
 
+  const equipment = type === "equipment";
   const ready =
-    photo &&
+    photos.length > 0 &&
     itemName.trim() &&
     Number(quantity) >= 1 &&
-    dueDate &&
-    reason.trim();
+    description.trim() &&
+    (!equipment || dueDate);
 
   const submit = async () => {
-    if (!photo) return;
     setConfirmed(null);
-    // loan_id is the attempt id: the same value is sent on every retry.
-    const ok = await attempt.run(photo, async (photoFileId, loanId) => {
+    // The loan id is the attempt id: the same value is sent on every retry.
+    const ok = await attempt.run(photos, async (photoFileIds, loanId) => {
       const loan = await api.createLoan({
-        loan_id: loanId,
+        id: loanId,
+        type,
         item_name: itemName.trim(),
+        description: description.trim(),
         quantity: Number(quantity),
-        due_date: dueDate,
-        reason: reason.trim(),
-        photo_file_id: photoFileId,
+        unit,
+        project_id: projectId || null,
+        due_date: equipment ? dueDate : null,
+        photo_file_ids: photoFileIds,
       });
       onCreated(loan);
       setConfirmed(`${loan.item_name} logged`);
     });
     if (ok) {
-      setPhoto(null);
-      setPickerKey((key) => key + 1);
+      dropPhotos(photos);
+      setPhotos([]);
       setItemName("");
       setQuantity("1");
+      setUnit(rules.units[0]);
+      setProjectId("");
+      setDescription("");
       setDueDate("");
-      setReason("");
     }
   };
 
@@ -124,9 +203,9 @@ function BorrowForm({ onCreated }: { onCreated: (loan: Loan) => void }) {
       bodyClassName="flex flex-col gap-4 p-5 md:p-6"
     >
       <div>
-        <h1 className="u-caps text-2xl">Borrow materials</h1>
+        <h1 className="u-caps text-2xl">Borrow from the lab</h1>
         <p className="mt-1 text-sm text-body-subtle">
-          Snap the item, say when it is coming back. Staff see it in the lab
+          Snap what you take and say what it is for. Staff see it in the lab
           log.
         </p>
       </div>
@@ -137,22 +216,34 @@ function BorrowForm({ onCreated }: { onCreated: (loan: Loan) => void }) {
           void submit();
         }}
       >
-        <PhotoPicker
-          key={pickerKey}
-          testId="borrow-photo-input"
-          disabled={attempt.busy}
-          onChange={(file) => {
-            attempt.forgetPhoto();
-            setPhoto(file);
-          }}
-        />
+        <TypeToggle value={type} disabled={attempt.busy} onChange={setType} />
+        <div>
+          <SysLabel>Photos</SysLabel>
+          <div className="mt-1.5">
+            <PhotoGrid
+              photos={photos}
+              max={rules.max_photos}
+              disabled={attempt.busy}
+              onAdd={(photo) => setPhotos((current) => [...current, photo])}
+              onRemove={(photo) => {
+                attempt.forgetPhoto(photo.key);
+                dropPhotos([photo]);
+                setPhotos((current) =>
+                  current.filter((other) => other.key !== photo.key),
+                );
+              }}
+            />
+          </div>
+        </div>
         <Field id="borrow-item" label="Item">
           <input
             id="borrow-item"
             className={fieldClass}
             value={itemName}
             maxLength={120}
-            placeholder="e.g. Soldering iron"
+            placeholder={
+              equipment ? "e.g. Soldering iron" : "e.g. PLA filament"
+            }
             onChange={(event) => setItemName(event.target.value)}
           />
         </Field>
@@ -163,35 +254,67 @@ function BorrowForm({ onCreated }: { onCreated: (loan: Loan) => void }) {
               type="number"
               inputMode="numeric"
               min={1}
-              max={999}
+              max={99999}
               className={fieldClass}
               value={quantity}
               onChange={(event) => setQuantity(event.target.value)}
             />
           </Field>
+          <Field id="borrow-unit" label="Unit">
+            <select
+              id="borrow-unit"
+              className={fieldClass}
+              value={unit}
+              onChange={(event) => setUnit(event.target.value)}
+            >
+              {rules.units.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <Field id="borrow-project" label="Project">
+          <select
+            id="borrow-project"
+            className={fieldClass}
+            value={projectId}
+            onChange={(event) => setProjectId(event.target.value)}
+          >
+            <option value="">Not for a listed project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.title}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field id="borrow-description" label="Description">
+          <textarea
+            id="borrow-description"
+            className={fieldClass}
+            rows={3}
+            maxLength={500}
+            placeholder="What it is and what it is for"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+          />
+        </Field>
+        {equipment && (
           <Field id="borrow-due" label="Return by">
             <input
               id="borrow-due"
               type="date"
               min={today}
+              max={lastDay}
               suppressHydrationWarning // server and browser dates can differ
               className={fieldClass}
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
             />
           </Field>
-        </div>
-        <Field id="borrow-reason" label="Reason">
-          <textarea
-            id="borrow-reason"
-            className={fieldClass}
-            rows={3}
-            maxLength={500}
-            placeholder="What is it for?"
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-          />
-        </Field>
+        )}
         <UploadMeter state={attempt.state} error={attempt.error} />
         <Button
           type="submit"
@@ -199,7 +322,7 @@ function BorrowForm({ onCreated }: { onCreated: (loan: Loan) => void }) {
           className="min-h-11"
           disabled={attempt.busy || !ready}
         >
-          {attempt.busy ? "Submitting…" : "Borrow"}
+          {attempt.busy ? "Submitting…" : equipment ? "Borrow" : "Log material"}
         </Button>
         {confirmed && (
           <p
@@ -220,26 +343,27 @@ function ReturnForm({
   onReturned,
 }: {
   loan: Loan;
-  onReturned: () => Promise<void>;
+  onReturned: (loan: Loan | null) => Promise<void>;
 }) {
   const attempt = useAttempt();
   const [photo, setPhoto] = useState<File | null>(null);
   const [note, setNote] = useState("");
-  const noteId = `return-note-${loan.loan_id}`;
+  const noteId = `return-note-${loan.id}`;
 
   const submit = async () => {
     if (!photo) return;
-    await attempt.run(photo, async (photoFileId) => {
+    await attempt.run([{ key: "return", file: photo }], async ([photoId]) => {
+      let returned: Loan | null = null;
       try {
-        await api.returnLoan(loan.loan_id, {
-          photo_file_id: photoFileId,
-          condition_note: note.trim(),
+        returned = await api.returnLoan(loan.id, {
+          photo_file_id: photoId,
+          note: note.trim(),
         });
       } catch (error) {
-        // An earlier try already returned it and only the refetch failed.
+        // An earlier try already returned it; only its response was lost.
         if (!(error instanceof ApiError && error.status === 409)) throw error;
       }
-      await onReturned();
+      await onReturned(returned);
     });
   };
 
@@ -257,7 +381,7 @@ function ReturnForm({
           testId="return-photo-input"
           disabled={attempt.busy}
           onChange={(file) => {
-            attempt.forgetPhoto();
+            attempt.forgetPhoto("return");
             setPhoto(file);
           }}
         />
@@ -284,16 +408,36 @@ function ReturnForm({
   );
 }
 
-function PhotoLink({ href, children }: { href: string; children: string }) {
-  return (
+function PhotoLinks({ ids, label }: { ids: string[]; label: string }) {
+  return ids.map((id, index) => (
     <a
-      href={href}
+      key={id}
+      href={`/loans/photo/${id}`}
       target="_blank"
       rel="noopener noreferrer"
       className={`${buttonClass("tertiary")} min-h-11`}
     >
-      {children}
+      {ids.length > 1 ? `${label} ${index + 1}` : label}
     </a>
+  ));
+}
+
+const rowClass =
+  "flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-default-subtle px-2 py-3 last:border-b-0";
+
+function LoanSummary({ loan, meta }: { loan: Loan; meta: string }) {
+  return (
+    <span className="min-w-full flex-1 sm:min-w-0">
+      <span className="block break-words text-base font-medium text-heading">
+        {loan.item_name} × {amount(loan)}
+      </span>
+      <SysLabel>{meta}</SysLabel>
+      {loan.project && (
+        <span className="mt-0.5 block break-words text-sm text-body-subtle">
+          For {loan.project.title}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -302,28 +446,19 @@ function OpenLoan({
   onReturned,
 }: {
   loan: Loan;
-  onReturned: () => Promise<void>;
+  onReturned: (loan: Loan | null) => Promise<void>;
 }) {
   const [returning, setReturning] = useState(false);
   return (
-    <li
-      data-testid="open-loan"
-      className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-default-subtle px-2 py-3 last:border-b-0"
-    >
-      <span className="min-w-full flex-1 sm:min-w-0">
-        <span className="block break-words text-base font-medium text-heading">
-          {loan.item_name}
-          {loan.quantity > 1 && ` × ${loan.quantity}`}
-        </span>
-        <SysLabel>Due {loan.due_date}</SysLabel>
-      </span>
-      {loan.overdue && (
+    <li data-testid="open-loan" className={rowClass}>
+      <LoanSummary loan={loan} meta={`Due ${loan.due_date}`} />
+      {loan.status === "overdue" && (
         <Badge variant="danger" mono>
           overdue
         </Badge>
       )}
-      <span className="flex gap-2">
-        <PhotoLink href={loan.borrow_photo_url}>View photo</PhotoLink>
+      <span className="flex flex-wrap gap-2">
+        <PhotoLinks ids={loan.borrow_photo_ids} label="Photo" />
         <Button
           type="button"
           className="min-h-11"
@@ -349,28 +484,20 @@ function ReturnedLoans({ loans }: { loans: Loan[] }) {
       </summary>
       <ul className="flex flex-col">
         {loans.map((loan) => (
-          <li
-            key={loan.loan_id}
-            className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border-default-subtle px-2 py-3 last:border-b-0"
-          >
-            <span className="min-w-full flex-1 sm:min-w-0">
-              <span className="block break-words text-base text-heading">
-                {loan.item_name}
-                {loan.quantity > 1 && ` × ${loan.quantity}`}
+          <li key={loan.id} className={rowClass}>
+            <LoanSummary
+              loan={loan}
+              meta={`Returned ${loan.returned_at ? formatDate(loan.returned_at) : ""}`}
+            />
+            {loan.return_note && (
+              <span className="min-w-full text-sm text-body-subtle">
+                {loan.return_note}
               </span>
-              <SysLabel>
-                Returned {loan.returned_at && formatDate(loan.returned_at)}
-              </SysLabel>
-              {loan.return_note && (
-                <span className="mt-0.5 block text-sm text-body-subtle">
-                  {loan.return_note}
-                </span>
-              )}
-            </span>
-            <span className="flex gap-2">
-              <PhotoLink href={loan.borrow_photo_url}>Borrow photo</PhotoLink>
-              {loan.return_photo_url && (
-                <PhotoLink href={loan.return_photo_url}>Return photo</PhotoLink>
+            )}
+            <span className="flex flex-wrap gap-2">
+              <PhotoLinks ids={loan.borrow_photo_ids} label="Borrow photo" />
+              {loan.return_photo_id && (
+                <PhotoLinks ids={[loan.return_photo_id]} label="Return photo" />
               )}
             </span>
           </li>
@@ -380,47 +507,81 @@ function ReturnedLoans({ loans }: { loans: Loan[] }) {
   );
 }
 
+function UsedLog({ loans }: { loans: Loan[] }) {
+  return (
+    <Window title="USED.LOG" bodyClassName="p-3 md:p-4">
+      {loans.length > 0 ? (
+        <ul data-testid="used-loans" className="flex flex-col">
+          {loans.map((loan) => (
+            <li key={loan.id} className={rowClass}>
+              <LoanSummary
+                loan={loan}
+                meta={`Logged ${formatDate(loan.borrowed_at)}`}
+              />
+              <Badge variant="gray" mono>
+                {loan.status}
+              </Badge>
+              <span className="flex flex-wrap gap-2">
+                <PhotoLinks ids={loan.borrow_photo_ids} label="Photo" />
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="p-3 text-base text-body-subtle">
+          No materials logged yet.
+        </p>
+      )}
+    </Window>
+  );
+}
+
 export function BorrowClient({
   initialLoans,
+  rules,
+  projects,
 }: {
-  initialLoans: Loan[] | null;
+  initialLoans: Loan[];
+  rules: LoanRules;
+  projects: ProjectOption[];
 }) {
-  const [loans, setLoans] = useState(initialLoans ?? []);
-
-  if (initialLoans === null) {
-    return (
-      <div className="mx-auto w-full max-w-[560px]">
-        <Window title="BORROW.LOG" floating bodyClassName="p-5 md:p-6">
-          <h1 className="u-caps text-2xl">Borrowing isn&apos;t set up yet</h1>
-          <p
-            data-testid="borrow-not-configured"
-            className="mt-2 text-base text-body-subtle"
-          >
-            Ask lab staff to turn it on. Everything else on the site works as
-            usual.
-          </p>
-        </Window>
-      </div>
-    );
-  }
+  const [loans, setLoans] = useState(initialLoans);
 
   const open = loans
-    .filter((loan) => loan.status === "out")
-    .sort((a, b) => a.due_date.localeCompare(b.due_date));
-  const returned = loans.filter((loan) => loan.status === "returned");
+    .filter((loan) => loan.status === "out" || loan.status === "overdue")
+    .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""));
+  const used = loans.filter((loan) => loan.status === "used");
+  const returned = loans
+    .filter((loan) => loan.status === "returned")
+    .sort((a, b) => (b.returned_at ?? "").localeCompare(a.returned_at ?? ""));
 
-  const refresh = async () => setLoans(await api.myLoans());
+  const onReturned = async (loan: Loan | null) => {
+    if (loan) {
+      setLoans((current) =>
+        current.map((other) => (other.id === loan.id ? loan : other)),
+      );
+    } else {
+      setLoans(await api.myLoans());
+    }
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-8">
       <BorrowForm
-        onCreated={(loan) => setLoans((current) => [loan, ...current])}
+        rules={rules}
+        projects={projects}
+        onCreated={(loan) =>
+          setLoans((current) => [
+            loan,
+            ...current.filter((other) => other.id !== loan.id),
+          ])
+        }
       />
       <Window title="ON_LOAN" bodyClassName="p-3 md:p-4">
         {open.length > 0 ? (
           <ul data-testid="open-loans" className="flex flex-col">
             {open.map((loan) => (
-              <OpenLoan key={loan.loan_id} loan={loan} onReturned={refresh} />
+              <OpenLoan key={loan.id} loan={loan} onReturned={onReturned} />
             ))}
           </ul>
         ) : (
@@ -430,6 +591,7 @@ export function BorrowClient({
         )}
         {returned.length > 0 && <ReturnedLoans loans={returned} />}
       </Window>
+      <UsedLog loans={used} />
     </div>
   );
 }
