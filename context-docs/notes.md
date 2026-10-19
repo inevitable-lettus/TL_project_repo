@@ -706,7 +706,10 @@ were deleted.
 - **Retries are safe.** The browser makes one random id the first time you
   submit and keeps it until the loan succeeds. A dropped connection followed by
   another press sends the same id, so the server returns the same loan instead
-  of creating a second one. Already-uploaded photos are reused. Returning is
+  of creating a second one. Already-uploaded photos are reused. Editing any
+  field after a failed submit starts a new loan id and re-uploads the photos
+  (#40): if the failed attempt did land, reusing its id would silently return
+  that loan and drop the edit. Returning is
   retry-safe too: a second return gets 409 "already returned" and the page
   treats that as success.
 - **Orphan photos.** If the loan save never happens, a finished photo sits in
