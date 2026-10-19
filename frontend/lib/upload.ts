@@ -49,7 +49,7 @@ export function uploadAvatar(
     .then((slot) => runUpload(slot, file, onState));
 }
 
-// Phone photos run to several MB; the Sheet and staff only need to recognise
+// Phone photos run to several MB; staff only need to recognise
 // the item. Undecodable formats upload as-is, as with avatars.
 export async function uploadLoanPhoto(
   file: File,

@@ -34,13 +34,13 @@ Backend scaffold (`backend/app/`): `config.py` (env-driven `Settings` — `datab
 
 Run (Docker): `cp .env.example .env`, then `docker compose up -d --build`; migrate with `docker compose exec backend alembic -c backend/alembic.ini upgrade head` (always invoke alembic from the repo root / container WORKDIR so `backend.app` imports); optional demo data via `docker compose exec backend python -m backend.app.seed`. App: `http://localhost/`, API health: `http://localhost/api/health`. Tests: `docker compose exec backend pytest` and `cd frontend && npm run e2e` (needs `ENVIRONMENT=test` + `AUTH_TEST_MODE=1` + `STAFF_EMAILS=staff@uni.edu` in `.env`).
 
-## Borrowing log (epic #7, started 2026-10-14)
+## Borrowing log (epic #7, finished 2026-10-19)
 
-Students log materials they borrow and return; the log is a Google Sheet written by an Apps Script web app, with FastAPI as its only caller. Built on branch `claude/material-borrowing-logging-00aff2`, merging to `main` once verified end to end. See [architecture.md](architecture.md) "Borrowing log". Shipped so far: #9 scope docs + `LOANS_*`/`LOAN_*` config, #10 `apps-script/loans/` (script + setup README), #11 `POST /loans/photo` private upload slot, #12 `backend/app/loans.py` (`POST /loans`, `GET /loans/mine`, `POST /loans/{id}/return`) + fake Sheet, #13 `/borrow` page + `/loans/photo/[id]` redirect + e2e, #14 these docs.
+Logged-in users record what they take from the lab; the log is stored in Postgres (migration `0008_loans`) and staff read it on the `/admin` **Loans** tab and export it as CSV. Built on branch `claude/material-borrowing-logging-00aff2` in six steps: #33 schema + borrower API (and removal of the earlier Sheet/Apps Script code), #28 orphan photo sweep, #29 admin API + CSV, #30 `/borrow` rework, #31 admin Loans tab, #32 these docs. See [architecture.md](architecture.md) "Borrowing log", [product.md](product.md) and [design.md](design.md). Upgrading an existing deployment: add `LAB_TIMEZONE` (required) and `LOAN_MAX_PHOTOS`, remove `LOANS_SCRIPT_*`, run `alembic upgrade head` ([deployment.md](../docs/deployment.md)).
 
-**Pending (human, issue #8):** choose the Google account that will own the Apps Script web app and the Sheet (a lab/staff account, not a student's), then run the "Anyone" web-app deploy check on the uni Workspace. Until then `LOANS_SCRIPT_URL` / `LOANS_SCRIPT_SECRET` stay empty (an obvious placeholder; borrowing is disabled and `/borrow` says so). No real URL or secret goes in the repo. Blocks real-Sheet testing and go-live of borrowing only.
+**Merge to `main`** needs the owner's explicit OK after QA.
 
-**Redesign decided 2026-10-19 (v2, not built):** the owner moved loans from the Sheet to Postgres. The redesign adds an in-app admin **Loans** tab with CSV export, an equipment-vs-material type, multiple photos, and an optional project link. The Apps Script and Sheet code will be deleted, which makes #8 obsolete. Full spec and build order: [borrowing-v2.md](borrowing-v2.md). Build it on this branch, then merge to `main`.
+**Owner to do:** close issue #8 (obsolete: no Google account owns anything now) with a note pointing at the docs above, and close or relabel the v1 issues #9–#14.
 
 ## Session context — read this to resume (kept current at the end of every phase)
 
@@ -124,12 +124,9 @@ Migration 0002 (Phase 2):
    - nginx public MinIO S3 route (`client_max_body_size` raised, endpoint matches public URL), bucket CORS, `pg_dump` backup service, seed script (sample projects with images), full from-scratch E2E (`down -v && up && migrate && seed && test`), light load sanity (~100 concurrent browsers).
    - **done =** app reachable via the uni public route (pending IT); upload/download works end-to-end over the real domain; presigned signatures validate; full suite green from a clean boot.
 
-9. **Borrowing log** (epic #7; code merged, real-Sheet verification pending #8)
-   - Apps Script web app + Sheet (`apps-script/loans/`), private `loan_photo` upload slot, `/loans` API with a fake Sheet for dev (`uv run python -m backend.tests.fake_sheet`), `/borrow` page, `/loans/photo/[id]` redirect.
-   - **done =** (1) all backend + frontend checks green, no regressions; (2) on a phone against a real test Sheet: borrow (camera opens) → row appears with a working photo link → return with photo → row shows `returned`; (3) photo link opens for owner and staff, 404 for another student; (4) same `loan_id` submitted twice → one row, and an item named `=1+1` is stored as text; (5) `LOANS_SCRIPT_URL` unset → `/borrow` shows a clear "borrowing isn't set up yet" message and the rest of the site is unaffected.
-   - **Status:** items 1, 3 (by tests), 4 and 5 are covered by backend/e2e tests against the fake Sheet. Items 2 and 4 on a **real** Sheet and a real phone camera are not yet verified: waiting on the owning account (#8).
-   - **Superseded by phase 10** (2026-10-19). Don't spend time on real-Sheet verification.
+9. **Borrowing log v1** (epic #7; superseded by phase 10 and removed)
+   - A Google Sheet written by an Apps Script web app. Replaced by phase 10 on 2026-10-19; none of it remains in the code.
 
-10. **Borrowing log v2: Postgres + admin page** (designed 2026-10-19, not started)
-   - Spec, decisions, data model, API, screens and the six build steps: [borrowing-v2.md](borrowing-v2.md).
-   - **done =** the 12-point list at the end of that file, plus all backend and frontend checks green.
+10. **Borrowing log: Postgres + admin page** (done 2026-10-19)
+   - Migration `0008_loans`, `/loans/*` borrower API, `/admin/loans*` staff API with CSV export, orphan-photo sweep in `cleanup.py`, reworked `/borrow` page, admin **Loans** tab.
+   - **done =** (1) a user borrows equipment with 2 photos and a project: it shows in ON_LOAN and in admin with both photos and the project; (2) a material logs with no return date and shows as `used`; (3) a user returns with a photo: `returned`, `returned_by` is the user; (4) staff mark another loan returned without a photo: `returned_by` is the staff member; (5) the overdue filter shows only open equipment past due in `LAB_TIMEZONE`; (6) the CSV opens in Excel, `=1+1` shows as text, photo links need a staff login; (7) another student gets 404 on someone else's photo and loan; (8) the same loan `id` submitted twice gives one row; (9) a loan can't link to someone else's project, and deleting a linked project keeps the loan; (10) 0 photos and `LOAN_MAX_PHOTOS` + 1 photos are both refused; (11) an abandoned confirmed photo is swept after the cutoff; (12) a student gets 403 on every `/admin/loans*` route.

@@ -1,4 +1,4 @@
-"""Borrowing log, stored in Postgres (context-docs/borrowing-v2.md).
+"""Borrowing log, stored in Postgres (see context-docs/architecture.md).
 
 Entries are never edited or deleted after submit. Status is derived from the
 dates by `loan_status`, never stored, so it can't drift."""

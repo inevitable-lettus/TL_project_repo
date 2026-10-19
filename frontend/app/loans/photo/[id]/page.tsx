@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 
-// The link staff click in the Sheet. Nothing renders: resolve the short-lived
+// The link staff click in the CSV export. Nothing renders: resolve the short-lived
 // presigned URL with the viewer's own session, then bounce to it.
 export default async function LoanPhotoPage({
   params,
