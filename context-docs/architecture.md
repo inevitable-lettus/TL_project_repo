@@ -1,6 +1,6 @@
 # Architecture
 
-How the system's parts talk. Read [CLAUDE.md](CLAUDE.md) first for the hard rules these flows must obey.
+How the system's parts talk. Read [CLAUDE.md](../CLAUDE.md) first for the hard rules these flows must obey.
 
 ## Component map
 
