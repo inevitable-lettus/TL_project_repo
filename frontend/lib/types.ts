@@ -70,17 +70,30 @@ export type DownloadUrl = {
   mime_type: string;
 };
 
+export type LoanType = "equipment" | "material";
+
+export type LoanStatus = "used" | "out" | "overdue" | "returned";
+
 export type Loan = {
-  loan_id: string;
-  borrowed_at: string;
+  id: string;
+  type: LoanType;
   item_name: string;
+  description: string;
   quantity: number;
-  reason: string;
-  due_date: string;
-  status: "out" | "returned";
-  overdue: boolean;
+  unit: string;
+  project: { id: string; title: string } | null;
+  due_date: string | null;
+  borrowed_at: string;
   returned_at: string | null;
-  borrow_photo_url: string;
-  return_photo_url: string | null;
+  returned_by_id: string | null;
   return_note: string | null;
+  status: LoanStatus;
+  borrow_photo_ids: string[];
+  return_photo_id: string | null;
+};
+
+export type LoanRules = {
+  max_days: number;
+  max_photos: number;
+  units: string[];
 };
