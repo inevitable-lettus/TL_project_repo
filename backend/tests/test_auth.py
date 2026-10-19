@@ -183,6 +183,7 @@ def make_settings(**overrides) -> Settings:
         "google_client_secret": "x",
         "google_hosted_domain": "uni.edu",
         "jwt_secret": "0123456789abcdef0123456789abcdef",
+        "lab_timezone": "Asia/Kolkata",
         **overrides,
     }
     return Settings(**values)
@@ -198,28 +199,35 @@ def test_settings_refuse_short_jwt_secret():
         make_settings(jwt_secret="too-short")
 
 
-def test_settings_loans_default_to_disabled():
-    cfg = make_settings()
-    assert not cfg.loans_enabled
-
-
-def test_settings_accept_loans_url_and_secret_together():
-    cfg = make_settings(
-        loans_script_url="https://script.example/exec", loans_script_secret="s"
-    )
-    assert cfg.loans_enabled
-
-
 @pytest.mark.parametrize(
-    "overrides",
-    [{"loans_script_url": "https://script.example/exec"}, {"loans_script_secret": "s"}],
+    "field", ["loan_max_days", "loan_photo_max_size", "loan_max_photos"]
 )
-def test_settings_refuse_half_configured_loans(overrides):
-    with pytest.raises(ValueError, match="LOANS_SCRIPT_URL.*LOANS_SCRIPT_SECRET"):
-        make_settings(**overrides)
-
-
-@pytest.mark.parametrize("field", ["loan_max_days", "loan_photo_max_size"])
 def test_settings_refuse_non_positive_loan_limits(field):
     with pytest.raises(ValueError, match=field.upper()):
         make_settings(**{field: 0})
+
+
+def test_settings_loan_max_photos_defaults_to_four():
+    assert make_settings().loan_max_photos == 4
+
+
+def test_settings_require_lab_timezone(monkeypatch):
+    monkeypatch.delenv("LAB_TIMEZONE", raising=False)
+    values = {"_env_file": None, "auth_test_mode": False}
+    with pytest.raises(ValueError, match="lab_timezone"):
+        Settings(
+            **values,
+            database_url="postgresql+psycopg://x:x@db/x",
+            minio_access_key="x",
+            minio_secret_key="x",
+            google_client_id="x",
+            google_client_secret="x",
+            google_hosted_domain="uni.edu",
+            jwt_secret="0123456789abcdef0123456789abcdef",
+        )
+
+
+@pytest.mark.parametrize("zone", ["", "Mars/Olympus", "../etc/passwd"])
+def test_settings_refuse_invalid_lab_timezone(zone):
+    with pytest.raises(ValueError, match="LAB_TIMEZONE"):
+        make_settings(lab_timezone=zone)
