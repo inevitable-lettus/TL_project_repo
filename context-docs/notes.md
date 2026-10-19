@@ -782,3 +782,20 @@ is in [borrowing-v2.md](borrowing-v2.md). Here's why, in plain language:
   loan saved. If the save never happens, a finished photo sits in storage with
   no loan. The cleanup job, which already removes half-finished uploads, will
   also remove these after an hour.
+
+### nginx dropped the port from the MinIO Host header (2026-10-19)
+
+- **Symptom.** With `HTTP_BIND` set to anything but 80 (and `MINIO_PUBLIC_ENDPOINT`
+  including the port, e.g. `localhost:8080`), every presigned download came back
+  `403 SignatureDoesNotMatch`: thumbnails and files all broke.
+- **Cause.** A presigned link is signed for a host *and port*. MinIO recomputes
+  the signature from the `Host` header it receives. nginx's `$host` variable
+  is the hostname **without the port**, so MinIO saw `localhost` while the link
+  was signed for `localhost:8080`.
+- **Fix.** The MinIO location uses `proxy_set_header Host $http_host`, which
+  forwards the `Host` header exactly as the browser sent it. On port 80 or 443
+  browsers omit the port, so nothing changes there. Applied to `nginx.conf`
+  and `nginx-tls.conf`.
+- **Lesson.** When a proxy sits in front of anything that verifies a signature
+  over the host (S3/MinIO presigned URLs), forward the original `Host` header
+  with its port. Reproduce with a non-default bind, not just port 80.
