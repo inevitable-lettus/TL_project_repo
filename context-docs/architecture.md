@@ -119,7 +119,7 @@ Staff CSV "photo" cells ──link──▶ <PUBLIC_URL>/loans/photo/<id> (front
 | `GET /admin/loans/export.csv` | Same filters, no pagination. Generated from DB rows, not file bytes, so hard rule 1 holds. |
 
 - **Photos** are shown with the existing `GET /files/{id}/download-url`, whose owner-or-staff check already covers `loan_photo`. CSV photo columns link to `/loans/photo/<id>`, so a link in a downloaded spreadsheet still needs a staff login and never leaks a presigned URL.
-- **CSV injection guard:** any cell starting with `=`, `+`, `-` or `@` gets a leading `'`, so an item named `=1+1` opens as text in Excel.
+- **CSV injection guard:** any cell starting with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading `'`, so an item named `=1+1` opens as text in Excel.
 - **Orphan sweep:** besides pending uploads (hard rule 5), the cleanup job removes `ready` `loan_photo` files with no `loan_photos` row older than `PENDING_MAX_AGE_SECONDS` (MinIO object first, then the row). This covers a photo uploaded and confirmed whose loan submit never happened.
 - **Env vars:** `LAB_TIMEZONE` (IANA name such as `Asia/Kolkata`; **no default, boot fails if missing or invalid**; containers run in UTC, so without it a loan reads overdue hours early or late), `LOAN_MAX_DAYS` (furthest return-by date, default 30), `LOAN_MAX_PHOTOS` (default 4, minimum 1), `LOAN_PHOTO_MAX_SIZE` (bytes per photo).
 - No overdue emails and no loans on public profiles: both stay out of scope.

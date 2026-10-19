@@ -723,7 +723,7 @@ were deleted.
   be the real public address. A loan photo cannot be set as a public avatar:
   avatars must be `kind = "media"`.
 - **CSV injection guard.** Excel runs text that starts with `=`, `+`, `-` or `@`
-  as a formula, so an item named `=IMPORTXML(...)` could phone home when staff
+  as a formula (a leading tab or carriage return can hide it, so those count too), so an item named `=IMPORTXML(...)` could phone home when staff
   open the export. Any such cell gets a leading `'`, so `=1+1` opens as text.
 - **Upgrading an existing deployment.** Three things change in `.env`: add
   `LAB_TIMEZONE` (required, boot fails without it) and `LOAN_MAX_PHOTOS`
