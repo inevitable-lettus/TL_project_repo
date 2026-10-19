@@ -1,12 +1,12 @@
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 import pytest
 
 from backend.app import cleanup, storage
 from backend.app.config import settings
-from backend.app.models import File
+from backend.app.models import File, Loan, LoanPhoto
 from backend.tests.helpers import login, make_client, upload_bytes
 
 
@@ -145,3 +145,90 @@ def test_cleanup_sweeps_stale_pending_loan_photo(db, student):
     assert db.get(File, file_id) is None
     with pytest.raises(Exception, match="NoSuchKey"):
         storage.stat_object(object_key)
+
+
+def age_file(db, file_id: str) -> str:
+    row = db.get(File, uuid.UUID(file_id))
+    row.created_at = datetime.now(UTC) - timedelta(
+        seconds=settings.pending_max_age_seconds + 60
+    )
+    db.commit()
+    return row.object_key
+
+
+def link_to_loan(db, user: dict, file_id: str) -> None:
+    loan = Loan(
+        id=uuid.uuid4(),
+        borrower_id=uuid.UUID(user["id"]),
+        type="equipment",
+        item_name="Arduino Uno",
+        description="Line-follower build",
+        quantity=1,
+        unit="pcs",
+        due_date=date.today() + timedelta(days=7),
+    )
+    db.add(loan)
+    db.flush()
+    db.add(
+        LoanPhoto(
+            file_id=uuid.UUID(file_id), loan_id=loan.id, stage="borrow", position=0
+        )
+    )
+    db.commit()
+
+
+def sweep() -> int:
+    from backend.tests.conftest import TestSession
+
+    return cleanup.sweep_once(session_factory=TestSession)
+
+
+def test_cleanup_sweeps_old_unlinked_ready_loan_photo(db, student):
+    client, _ = student
+    file_id = upload_loan_photo(client)["id"]
+    object_key = age_file(db, file_id)
+
+    assert sweep() == 1
+    db.expire_all()
+    assert db.get(File, uuid.UUID(file_id)) is None
+    with pytest.raises(Exception, match="NoSuchKey"):
+        storage.stat_object(object_key)
+
+
+def test_cleanup_keeps_old_linked_loan_photo(db, student):
+    client, user = student
+    file_id = upload_loan_photo(client)["id"]
+    object_key = age_file(db, file_id)
+    link_to_loan(db, user, file_id)
+
+    assert sweep() == 0
+    db.expire_all()
+    assert db.get(File, uuid.UUID(file_id)) is not None
+    storage.stat_object(object_key)
+
+
+def test_cleanup_keeps_fresh_unlinked_loan_photo(db, student):
+    client, _ = student
+    file_id = upload_loan_photo(client)["id"]
+
+    assert sweep() == 0
+    db.expire_all()
+    assert db.get(File, uuid.UUID(file_id)) is not None
+
+
+def test_cleanup_keeps_row_when_minio_delete_fails(db, student, monkeypatch):
+    client, _ = student
+    file_id = upload_loan_photo(client)["id"]
+    age_file(db, file_id)
+
+    def boom(object_key: str) -> None:
+        raise RuntimeError("minio down")
+
+    monkeypatch.setattr(storage, "remove_object", boom)
+    with pytest.raises(RuntimeError, match="minio down"):
+        sweep()
+    db.expire_all()
+    assert db.get(File, uuid.UUID(file_id)) is not None
+
+    monkeypatch.undo()
+    assert sweep() == 1
