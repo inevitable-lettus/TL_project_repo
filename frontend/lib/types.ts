@@ -69,3 +69,64 @@ export type DownloadUrl = {
   size: number;
   mime_type: string;
 };
+
+export type LoanType = "equipment" | "material";
+
+export type LoanStatus = "used" | "out" | "overdue" | "returned";
+
+export type Loan = {
+  id: string;
+  type: LoanType;
+  item_name: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  project: { id: string; title: string } | null;
+  due_date: string | null;
+  borrowed_at: string;
+  returned_at: string | null;
+  returned_by_id: string | null;
+  return_note: string | null;
+  status: LoanStatus;
+  borrow_photo_ids: string[];
+  return_photo_id: string | null;
+};
+
+// Staff view of a loan (GET /admin/loans): who borrowed it, who returned it,
+// and every photo with its stage.
+export type PersonRef = { id: string; name: string; email: string };
+
+export type AdminLoan = {
+  id: string;
+  type: LoanType;
+  item_name: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  borrower: PersonRef;
+  project: { id: string; title: string } | null;
+  due_date: string | null;
+  borrowed_at: string;
+  returned_at: string | null;
+  returned_by: PersonRef | null;
+  return_note: string | null;
+  status: LoanStatus;
+  photos: { file_id: string; stage: "borrow" | "return"; position: number }[];
+};
+
+export type AdminLoanPage = { items: AdminLoan[]; total: number };
+
+// Query filters shared by the admin list and the CSV export. Empty = no filter.
+export type LoanFilters = {
+  status: LoanStatus | "";
+  type: LoanType | "";
+  q: string;
+  from: string;
+  to: string;
+};
+
+export type LoanRules = {
+  max_days: number;
+  max_photos: number;
+  units: string[];
+};

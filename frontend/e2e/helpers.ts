@@ -88,3 +88,75 @@ export async function patchProject(
   });
   expect(response.ok()).toBeTruthy();
 }
+
+// A confirmed loan photo owned by the caller (the /loans/photo slot).
+export async function uploadLoanPhoto(
+  request: APIRequestContext,
+): Promise<string> {
+  const slotResponse = await request.post("/api/loans/photo", {
+    data: {
+      filename: "item.png",
+      size: PNG_BYTES.length,
+      mime_type: "image/png",
+    },
+  });
+  expect(slotResponse.ok()).toBeTruthy();
+  const slot = await slotResponse.json();
+  const storageResponse = await request.post(slot.upload_url, {
+    multipart: {
+      ...slot.upload_fields,
+      file: { name: "item.png", mimeType: "image/png", buffer: PNG_BYTES },
+    },
+  });
+  expect(storageResponse.ok()).toBeTruthy();
+  const confirmResponse = await request.post(
+    `/api/files/${slot.file.id}/confirm`,
+  );
+  expect(confirmResponse.ok()).toBeTruthy();
+  return slot.file.id;
+}
+
+// Log a loan through the borrower API with `photos` fresh photos.
+export async function createLoan(
+  request: APIRequestContext,
+  loan: {
+    type: "equipment" | "material";
+    item_name: string;
+    quantity?: number;
+    unit?: string;
+    project_id?: string;
+    due_date?: string;
+    photos?: number;
+  },
+): Promise<string> {
+  const photoIds: string[] = [];
+  for (let i = 0; i < (loan.photos ?? 1); i += 1) {
+    photoIds.push(await uploadLoanPhoto(request));
+  }
+  const response = await request.post("/api/loans", {
+    data: {
+      id: crypto.randomUUID(),
+      type: loan.type,
+      item_name: loan.item_name,
+      description: `About ${loan.item_name}`,
+      quantity: loan.quantity ?? 1,
+      unit: loan.unit ?? "pcs",
+      project_id: loan.project_id ?? null,
+      due_date: loan.due_date ?? null,
+      photo_file_ids: photoIds,
+    },
+  });
+  expect(response.status()).toBe(201);
+  return (await response.json()).id;
+}
+
+// YYYY-MM-DD `days` from today in the browser's local calendar.
+export function inDays(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}

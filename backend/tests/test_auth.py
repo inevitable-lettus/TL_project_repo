@@ -183,6 +183,7 @@ def make_settings(**overrides) -> Settings:
         "google_client_secret": "x",
         "google_hosted_domain": "uni.edu",
         "jwt_secret": "0123456789abcdef0123456789abcdef",
+        "lab_timezone": "Asia/Kolkata",
         **overrides,
     }
     return Settings(**values)
@@ -196,3 +197,37 @@ def test_settings_refuse_test_mode_outside_test_env():
 def test_settings_refuse_short_jwt_secret():
     with pytest.raises(ValueError, match="JWT_SECRET"):
         make_settings(jwt_secret="too-short")
+
+
+@pytest.mark.parametrize(
+    "field", ["loan_max_days", "loan_photo_max_size", "loan_max_photos"]
+)
+def test_settings_refuse_non_positive_loan_limits(field):
+    with pytest.raises(ValueError, match=field.upper()):
+        make_settings(**{field: 0})
+
+
+def test_settings_loan_max_photos_defaults_to_four():
+    assert make_settings().loan_max_photos == 4
+
+
+def test_settings_require_lab_timezone(monkeypatch):
+    monkeypatch.delenv("LAB_TIMEZONE", raising=False)
+    values = {"_env_file": None, "auth_test_mode": False}
+    with pytest.raises(ValueError, match="lab_timezone"):
+        Settings(
+            **values,
+            database_url="postgresql+psycopg://x:x@db/x",
+            minio_access_key="x",
+            minio_secret_key="x",
+            google_client_id="x",
+            google_client_secret="x",
+            google_hosted_domain="uni.edu",
+            jwt_secret="0123456789abcdef0123456789abcdef",
+        )
+
+
+@pytest.mark.parametrize("zone", ["", "Mars/Olympus", "../etc/passwd"])
+def test_settings_refuse_invalid_lab_timezone(zone):
+    with pytest.raises(ValueError, match="LAB_TIMEZONE"):
+        make_settings(lab_timezone=zone)

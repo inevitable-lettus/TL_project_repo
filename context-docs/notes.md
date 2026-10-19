@@ -665,3 +665,91 @@ Space Grotesk / DM Sans / JetBrains Mono) and adds a real motion layer. The
 university involvement; Stage 2 needs IT to say who terminates HTTPS and what
 body-size limit their network imposes, since `MAX_FILE_SIZE` must sit below
 the smallest limit in the chain.
+
+### Borrowing log: how the pieces fit (epic #7, finished 2026-10-19)
+
+Plain-language tour of the finished borrowing log. The first version stored
+loans in a Google Sheet through an Apps Script; on 2026-10-19 the owner moved
+everything to Postgres (the design spec's decisions now live
+in product.md, design.md and architecture.md), and the Sheet and script code
+were deleted.
+
+- **Why Postgres.** Staff wanted an admin page *inside the site*. A page that
+  asks Google for every row is slow and breaks whenever Google or the script
+  does. A table answers in milliseconds and sits next to the users and projects
+  it refers to. It also removed the shared secret and the question of which
+  Google account owns the Sheet (issue #8, now obsolete). Staff still get a
+  spreadsheet: the **Export CSV** button on the admin Loans tab. CSV is a
+  plain-text table that Excel opens directly.
+- **Equipment vs material.** Equipment comes back, so it gets a return date and
+  a Return step. Material is used up, so it is logged once and is final. One
+  `type` field switches the form between the two.
+- **Derived status.** The table stores dates, not "overdue". The code works out
+  *out / overdue / returned / used* every time it reads a row, in one function
+  shared by every endpoint and the CSV. A stored status could drift from the
+  dates; a computed one cannot.
+- **`LAB_TIMEZONE`.** "Overdue" means "due date is before today", and today
+  depends on where you are. Containers run in UTC, so without the lab's own
+  zone a loan would read overdue hours early or late. The setting has no
+  default on purpose: the backend refuses to start without a valid IANA name
+  such as `Asia/Kolkata`.
+- **Join table (`loan_photos`).** One loan can have several photos. Rather than
+  stuffing a list into the loan row, a second table holds one line per photo:
+  which loan, borrow or return stage, and display position. That is the
+  standard way to model one-to-many in a database.
+- **Photos on `/borrow`.** "Add photo" is a file input with
+  `capture="environment"`: on a phone it opens the rear camera, on a desktop it
+  is a file picker. Photos are only previewed when picked. They are downscaled
+  and uploaded when you press Submit (the same presigned flow as avatars, bytes
+  go straight to MinIO), then `POST /loans` is called. Walk away from the form
+  and nothing is left in storage.
+- **Retries are safe.** The browser makes one random id the first time you
+  submit and keeps it until the loan succeeds. A dropped connection followed by
+  another press sends the same id, so the server returns the same loan instead
+  of creating a second one. Already-uploaded photos are reused. Editing any
+  field after a failed submit starts a new loan id and re-uploads the photos
+  (#40): if the failed attempt did land, reusing its id would silently return
+  that loan and drop the edit. Returning is
+  retry-safe too: a second return gets 409 "already returned" and the page
+  treats that as success.
+- **Orphan photos.** If the loan save never happens, a finished photo sits in
+  storage with no loan. The cleanup job, which already removes half-finished
+  uploads, also removes these after `PENDING_MAX_AGE_SECONDS` (an hour).
+- **Not found looks the same either way.** Returning, or opening the photo of,
+  someone else's loan or one that does not exist gives the same 404, so nobody
+  can probe which ids exist.
+- **Loan photos are private files** in MinIO (`kind = "loan_photo"`), visible to
+  the owner and staff only. CSV photo columns link to
+  `<PUBLIC_URL>/loans/photo/<id>`, a frontend page with no UI that asks the
+  backend for a short-lived download link using *your* login and redirects, so a
+  link in a downloaded spreadsheet still needs a staff login. `PUBLIC_URL` must
+  be the real public address. A loan photo cannot be set as a public avatar:
+  avatars must be `kind = "media"`.
+- **CSV injection guard.** Excel runs text that starts with `=`, `+`, `-` or `@`
+  as a formula (a leading tab or carriage return can hide it, so those count too), so an item named `=IMPORTXML(...)` could phone home when staff
+  open the export. Any such cell gets a leading `'`, so `=1+1` opens as text.
+- **Upgrading an existing deployment.** Three things change in `.env`: add
+  `LAB_TIMEZONE` (required, boot fails without it) and `LOAN_MAX_PHOTOS`
+  (default 4), and delete `LOANS_SCRIPT_URL` / `LOANS_SCRIPT_SECRET`. Then
+  rebuild and run `alembic upgrade head`: Compose does not run migrations on
+  `up`, and without migration `0008_loans` the loans endpoints fail. See
+  `docs/deployment.md`.
+- **Left to the owner.** Close issue #8 with a note pointing at the product
+  and architecture docs, and close or relabel the v1 issues #9–#14.
+
+### nginx dropped the port from the MinIO Host header (2026-10-19)
+
+- **Symptom.** With `HTTP_BIND` set to anything but 80 (and `MINIO_PUBLIC_ENDPOINT`
+  including the port, e.g. `localhost:8080`), every presigned download came back
+  `403 SignatureDoesNotMatch`: thumbnails and files all broke.
+- **Cause.** A presigned link is signed for a host *and port*. MinIO recomputes
+  the signature from the `Host` header it receives. nginx's `$host` variable
+  is the hostname **without the port**, so MinIO saw `localhost` while the link
+  was signed for `localhost:8080`.
+- **Fix.** The MinIO location uses `proxy_set_header Host $http_host`, which
+  forwards the `Host` header exactly as the browser sent it. On port 80 or 443
+  browsers omit the port, so nothing changes there. Applied to `nginx.conf`
+  and `nginx-tls.conf`.
+- **Lesson.** When a proxy sits in front of anything that verifies a signature
+  over the host (S3/MinIO presigned URLs), forward the original `Host` header
+  with its port. Reproduce with a non-default bind, not just port 80.

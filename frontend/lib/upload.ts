@@ -1,4 +1,5 @@
 import { api, ApiError, uploadToStorage } from "./api";
+import { downscaleImage } from "./image";
 import type { FileInfo, UploadSlot } from "./types";
 
 // Honest upload states (design.md): uploading (bytes → MinIO), processing
@@ -46,6 +47,27 @@ export function uploadAvatar(
       mime_type: file.type || "application/octet-stream",
     })
     .then((slot) => runUpload(slot, file, onState));
+}
+
+// Phone photos run to several MB; staff only need to recognise
+// the item. Undecodable formats upload as-is, as with avatars.
+export async function uploadLoanPhoto(
+  file: File,
+  onState: (state: UploadState) => void,
+): Promise<FileInfo> {
+  let toUpload = file;
+  try {
+    const small = await downscaleImage(file, 1600);
+    toUpload = new File([small], "loan.webp", { type: "image/webp" });
+  } catch {
+    toUpload = file;
+  }
+  const slot = await api.loanPhotoSlot({
+    filename: toUpload.name,
+    size: toUpload.size,
+    mime_type: toUpload.type || "application/octet-stream",
+  });
+  return runUpload(slot, toUpload, onState);
 }
 
 // Enforcement points 1 and 3 return a plain "file exceeds N GB limit"

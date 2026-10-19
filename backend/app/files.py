@@ -43,10 +43,19 @@ def user_storage_used(db: Session, owner_id: uuid.UUID) -> int:
     ).scalar_one()
 
 
-def oversize_error() -> HTTPException:
+def max_size_for(kind: str) -> int:
+    if kind == "loan_photo":
+        return settings.loan_photo_max_size
+    return settings.max_file_size
+
+
+def oversize_error(limit: int) -> HTTPException:
     # Same plain message at all three enforcement points (design.md).
-    limit_gb = settings.max_file_size / 1024**3
-    return HTTPException(status_code=400, detail=f"file exceeds {limit_gb:g} GB limit")
+    if limit < 1024**3:
+        readable = f"{limit / 1024**2:g} MB"
+    else:
+        readable = f"{limit / 1024**3:g} GB"
+    return HTTPException(status_code=400, detail=f"file exceeds {readable} limit")
 
 
 def purge_project_objects(project: Project) -> None:
@@ -78,8 +87,9 @@ def create_upload_slot(
 ) -> UploadSlotOut:
     project = get_project_or_404(db, project_id)
     require_can_edit(project, user)
+    # enforcement #1: declared-size pre-check
     if body.size > settings.max_file_size:
-        raise oversize_error()  # enforcement #1: declared-size pre-check
+        raise oversize_error(settings.max_file_size)
     if user_storage_used(db, project.owner_id) + body.size > settings.max_user_storage:
         raise HTTPException(status_code=400, detail="storage quota exceeded")
 
@@ -102,7 +112,7 @@ def create_upload_slot(
 
 
 def _slot_response(file: File) -> UploadSlotOut:
-    upload = storage.presigned_post(file.object_key, settings.max_file_size)
+    upload = storage.presigned_post(file.object_key, max_size_for(file.kind))
     return UploadSlotOut(
         file=FileOut.model_validate(file),
         upload_url=upload["url"],
@@ -116,16 +126,19 @@ class AvatarSlotIn(BaseModel):
     mime_type: str = Field(min_length=1, max_length=255)
 
 
-@router.post("/users/me/avatar", response_model=UploadSlotOut)
-def create_avatar_slot(
+def _create_user_image_slot(
+    db: Session,
+    user: User,
     body: AvatarSlotIn,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    *,
+    kind: str,
+    key_prefix: str,
+    not_image_detail: str,
 ) -> UploadSlotOut:
     if not body.mime_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="avatar must be an image")
-    if body.size > settings.max_file_size:
-        raise oversize_error()
+        raise HTTPException(status_code=400, detail=not_image_detail)
+    if body.size > max_size_for(kind):
+        raise oversize_error(max_size_for(kind))
     if user_storage_used(db, user.id) + body.size > settings.max_user_storage:
         raise HTTPException(status_code=400, detail="storage quota exceeded")
 
@@ -134,15 +147,47 @@ def create_avatar_slot(
         id=file_id,
         owner_id=user.id,
         filename=body.filename,
-        object_key=f"avatars/{user.id}/{file_id}/{sanitize_filename(body.filename)}",
+        object_key=f"{key_prefix}/{user.id}/{file_id}/{sanitize_filename(body.filename)}",
         size=body.size,
         mime_type=body.mime_type,
-        kind="media",
+        kind=kind,
     )
     db.add(file)
     db.commit()
     db.refresh(file)
     return _slot_response(file)
+
+
+@router.post("/users/me/avatar", response_model=UploadSlotOut)
+def create_avatar_slot(
+    body: AvatarSlotIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> UploadSlotOut:
+    return _create_user_image_slot(
+        db,
+        user,
+        body,
+        kind="media",
+        key_prefix="avatars",
+        not_image_detail="avatar must be an image",
+    )
+
+
+@router.post("/loans/photo", response_model=UploadSlotOut)
+def create_loan_photo_slot(
+    body: AvatarSlotIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> UploadSlotOut:
+    return _create_user_image_slot(
+        db,
+        user,
+        body,
+        kind="loan_photo",
+        key_prefix="loans",
+        not_image_detail="loan photo must be an image",
+    )
 
 
 @router.post("/files/{file_id}/confirm", response_model=FileOut)
@@ -168,11 +213,11 @@ def confirm_upload(
         raise
 
     # Enforcement #3 (authoritative): the actual size in storage decides.
-    if stat.size > settings.max_file_size:
+    if stat.size > max_size_for(file.kind):
         storage.remove_object(file.object_key)
         db.delete(file)
         db.commit()
-        raise oversize_error()
+        raise oversize_error(max_size_for(file.kind))
     used_without_this = user_storage_used(db, file_charged_owner_id(file)) - file.size
     if used_without_this + stat.size > settings.max_user_storage:
         storage.remove_object(file.object_key)
@@ -199,6 +244,9 @@ def delete_file(
     if file is None:
         raise HTTPException(status_code=404, detail="File not found")
     require_file_edit(file, user)
+    # Loan photos are evidence of an item's condition: only staff may remove them.
+    if file.kind == "loan_photo" and user.role != "staff":
+        raise HTTPException(status_code=403, detail="loan photos can't be deleted")
     if file.project_id is not None:
         project = db.get(Project, file.project_id)
         if project.content and file.id in collect_content_file_ids(project.content):

@@ -48,6 +48,9 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-1" data-testid="user-menu">
+      <Link href="/borrow" className={menuLink}>
+        Borrow
+      </Link>
       <Link href="/dashboard" className={menuLink}>
         My projects
       </Link>

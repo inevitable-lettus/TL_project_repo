@@ -9,10 +9,12 @@ import struct
 import sys
 import uuid
 import zlib
+from datetime import datetime, timedelta
 
 from . import storage
 from .db import SessionLocal
-from .models import File, Project, User
+from .loans import lab_today
+from .models import File, Loan, LoanPhoto, Project, User
 
 STAFF_EMAIL = "staff@uni.edu"
 
@@ -69,6 +71,81 @@ def add_file(
     db.add(file)
     db.flush()
     return file
+
+
+def add_loan_photo(db, owner: User, rgb: tuple[int, int, int]) -> File:
+    file_id = uuid.uuid4()
+    data = make_png(rgb, width=320, height=240)
+    file = File(
+        id=file_id,
+        owner_id=owner.id,
+        filename="loan.png",
+        object_key=f"loans/{owner.id}/{file_id}/loan.png",
+        size=len(data),
+        mime_type="image/png",
+        status="ready",
+        kind="loan_photo",
+    )
+    storage.client.put_object(
+        storage.settings.minio_bucket,
+        file.object_key,
+        io.BytesIO(data),
+        len(data),
+        content_type="image/png",
+    )
+    db.add(file)
+    db.flush()
+    return file
+
+
+def seed_loans(db, students: list[User], projects: list[Project]) -> int:
+    """A few loans of each status: out, overdue, returned, used."""
+    today = lab_today()
+    now = datetime.now().astimezone()
+    ada, sam = students
+    ada_project = next(p for p in projects if p.owner_id == ada.id)
+    rows = [
+        # (borrower, type, item, qty, unit, project, due, borrowed days ago, returned)
+        (ada, "equipment", "Multimeter", 1, "pcs", ada_project, 5, 2, False),
+        (sam, "equipment", "Soldering iron", 1, "pcs", None, 10, 1, False),
+        (ada, "equipment", "Oscilloscope probe", 2, "pcs", None, -3, 12, False),
+        (sam, "equipment", "Digital calipers", 1, "pcs", None, -1, 8, False),
+        (ada, "equipment", "Hot glue gun", 1, "pcs", ada_project, -6, 14, True),
+        (sam, "equipment", "Bench power supply", 1, "pcs", None, 2, 9, True),
+        (ada, "material", "PLA filament", 250, "g", ada_project, None, 3, False),
+        (sam, "material", "Acrylic sheet 3mm", 2, "sheets", None, None, 6, False),
+    ]
+    for index, (who, kind, item, qty, unit, project, due, ago, returned) in enumerate(
+        rows
+    ):
+        borrowed_at = now - timedelta(days=ago)
+        loan = Loan(
+            id=uuid.uuid4(),
+            borrower_id=who.id,
+            type=kind,
+            item_name=item,
+            description=f"{item} for a lab build.",
+            quantity=qty,
+            unit=unit,
+            project_id=project.id if project else None,
+            due_date=today + timedelta(days=due) if due is not None else None,
+            borrowed_at=borrowed_at,
+            returned_at=borrowed_at + timedelta(days=1) if returned else None,
+            returned_by_id=who.id if returned else None,
+        )
+        db.add(loan)
+        db.flush()
+        rgb = PALETTE[index % len(PALETTE)]
+        stages = [("borrow", 0)] + ([("return", 0)] if returned else [])
+        for stage, position in stages:
+            photo = add_loan_photo(db, who, rgb)
+            db.add(
+                LoanPhoto(
+                    file_id=photo.id, loan_id=loan.id, stage=stage, position=position
+                )
+            )
+    db.flush()
+    return len(rows)
 
 
 def doc(intro: str, media_file_id: uuid.UUID) -> dict:
@@ -150,6 +227,7 @@ def main() -> None:
     db.add_all([staff, *students])
     db.flush()
 
+    projects = []
     for index, (title, description, is_public) in enumerate(SAMPLE_PROJECTS):
         owner = students[index % len(students)]
         project = Project(
@@ -160,6 +238,7 @@ def main() -> None:
         )
         db.add(project)
         db.flush()
+        projects.append(project)
 
         cover = add_file(
             db,
@@ -194,8 +273,12 @@ def main() -> None:
             if index < 2:
                 project.slider_pinned = True
 
+    loan_count = seed_loans(db, students, projects)
     db.commit()
-    print(f"seeded {len(SAMPLE_PROJECTS)} projects for {len(students)} students")
+    print(
+        f"seeded {len(SAMPLE_PROJECTS)} projects and {loan_count} loans"
+        f" for {len(students)} students"
+    )
 
 
 if __name__ == "__main__":

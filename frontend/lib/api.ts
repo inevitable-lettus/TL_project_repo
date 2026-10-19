@@ -1,5 +1,10 @@
 import type {
+  AdminLoanPage,
   DownloadUrl,
+  Loan,
+  LoanFilters,
+  LoanRules,
+  LoanType,
   Profile,
   ProjectDetail,
   ProjectListItem,
@@ -55,6 +60,7 @@ async function request<T>(
     }
     throw new ApiError(response.status, detail);
   }
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
@@ -103,6 +109,27 @@ export const api = {
     }),
   avatarSlot: (body: { filename: string; size: number; mime_type: string }) =>
     request<UploadSlot>("/users/me/avatar", { method: "POST", body }),
+  loanPhotoSlot: (body: {
+    filename: string;
+    size: number;
+    mime_type: string;
+  }) => request<UploadSlot>("/loans/photo", { method: "POST", body }),
+  loanRules: (cookie?: string) =>
+    request<LoanRules>("/loans/rules", { cookie }),
+  createLoan: (body: {
+    id: string;
+    type: LoanType;
+    item_name: string;
+    description: string;
+    quantity: number;
+    unit: string;
+    project_id: string | null;
+    due_date: string | null;
+    photo_file_ids: string[];
+  }) => request<Loan>("/loans", { method: "POST", body }),
+  myLoans: (cookie?: string) => request<Loan[]>("/loans/mine", { cookie }),
+  returnLoan: (loanId: string, body: { photo_file_id: string; note: string }) =>
+    request<Loan>(`/loans/${loanId}/return`, { method: "POST", body }),
   confirmUpload: (fileId: string) =>
     request<UploadSlot["file"]>(`/files/${fileId}/confirm`, { method: "POST" }),
   deleteFile: (fileId: string) =>
@@ -131,6 +158,15 @@ export const api = {
       method: "PATCH",
       body: { role },
     }),
+  adminLoans: (filters: LoanFilters, offset = 0, cookie?: string) =>
+    request<AdminLoanPage>(
+      `/admin/loans?${loanQuery(filters)}&limit=${ADMIN_LOAN_PAGE}&offset=${offset}`,
+      { cookie },
+    ),
+  adminReturnLoan: (
+    loanId: string,
+    body: { photo_file_id: string | null; note: string },
+  ) => request<Loan>(`/admin/loans/${loanId}/return`, { method: "POST", body }),
   adminSetFeatured: (projectIds: string[]) =>
     request<{ featured: number }>("/admin/featured", {
       method: "PUT",
@@ -142,6 +178,26 @@ export const api = {
       body: { pinned },
     }),
 };
+
+export const ADMIN_LOAN_PAGE = 50;
+
+// Only filters that are set go in the query string; the API treats a missing
+// parameter as "any".
+export function loanQuery(filters: LoanFilters): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    const trimmed = value.trim();
+    if (trimmed) params.set(key, trimmed);
+  }
+  return params.toString();
+}
+
+// The browser downloads the CSV straight from the API (same origin, session
+// cookie), with the same filters as the list on screen.
+export function loanCsvUrl(filters: LoanFilters): string {
+  const query = loanQuery(filters);
+  return `/api/admin/loans/export.csv${query ? `?${query}` : ""}`;
+}
 
 type HasCover = {
   cover_file_id: string | null;

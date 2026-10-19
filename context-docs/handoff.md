@@ -34,6 +34,14 @@ Backend scaffold (`backend/app/`): `config.py` (env-driven `Settings` — `datab
 
 Run (Docker): `cp .env.example .env`, then `docker compose up -d --build`; migrate with `docker compose exec backend alembic -c backend/alembic.ini upgrade head` (always invoke alembic from the repo root / container WORKDIR so `backend.app` imports); optional demo data via `docker compose exec backend python -m backend.app.seed`. App: `http://localhost/`, API health: `http://localhost/api/health`. Tests: `docker compose exec backend pytest` and `cd frontend && npm run e2e` (needs `ENVIRONMENT=test` + `AUTH_TEST_MODE=1` + `STAFF_EMAILS=staff@uni.edu` in `.env`).
 
+## Borrowing log (epic #7, finished 2026-10-19)
+
+Logged-in users record what they take from the lab; the log is stored in Postgres (migration `0008_loans`) and staff read it on the `/admin` **Loans** tab and export it as CSV. Built on branch `claude/material-borrowing-logging-00aff2` in six steps: #33 schema + borrower API (and removal of the earlier Sheet/Apps Script code), #28 orphan photo sweep, #29 admin API + CSV, #30 `/borrow` rework, #31 admin Loans tab, #32 these docs. See [architecture.md](architecture.md) "Borrowing log", [product.md](product.md) and [design.md](design.md). Upgrading an existing deployment: add `LAB_TIMEZONE` (required) and `LOAN_MAX_PHOTOS`, remove `LOANS_SCRIPT_*`, run `alembic upgrade head` ([deployment.md](../docs/deployment.md)).
+
+**Merge to `main`** needs the owner's explicit OK after QA.
+
+**Owner to do:** close issue #8 (obsolete: no Google account owns anything now) with a note pointing at the docs above, and close or relabel the v1 issues #9–#14.
+
 ## Session context — read this to resume (kept current at the end of every phase)
 
 - **Working tree**: work happens on branch `claude/project-review-architecture-92df3e` (worktree under `.claude/worktrees/`). `.env` is gitignored — copy it from the main repo checkout into the worktree before booting the stack. `frontend/node_modules` needs `npm ci` in a fresh worktree.
@@ -115,3 +123,10 @@ Migration 0002 (Phase 2):
 8. **Hardening + deploy**
    - nginx public MinIO S3 route (`client_max_body_size` raised, endpoint matches public URL), bucket CORS, `pg_dump` backup service, seed script (sample projects with images), full from-scratch E2E (`down -v && up && migrate && seed && test`), light load sanity (~100 concurrent browsers).
    - **done =** app reachable via the uni public route (pending IT); upload/download works end-to-end over the real domain; presigned signatures validate; full suite green from a clean boot.
+
+9. **Borrowing log v1** (epic #7; superseded by phase 10 and removed)
+   - A Google Sheet written by an Apps Script web app. Replaced by phase 10 on 2026-10-19; none of it remains in the code.
+
+10. **Borrowing log: Postgres + admin page** (done 2026-10-19)
+   - Migration `0008_loans`, `/loans/*` borrower API, `/admin/loans*` staff API with CSV export, orphan-photo sweep in `cleanup.py`, reworked `/borrow` page, admin **Loans** tab.
+   - **done =** (1) a user borrows equipment with 2 photos and a project: it shows in ON_LOAN and in admin with both photos and the project; (2) a material logs with no return date and shows as `used`; (3) a user returns with a photo: `returned`, `returned_by` is the user; (4) staff mark another loan returned without a photo: `returned_by` is the staff member; (5) the overdue filter shows only open equipment past due in `LAB_TIMEZONE`; (6) the CSV opens in Excel, `=1+1` shows as text, photo links need a staff login; (7) another student gets 404 on someone else's photo and loan; (8) the same loan `id` submitted twice gives one row; (9) a loan can't link to someone else's project, and deleting a linked project keeps the loan; (10) 0 photos and `LOAN_MAX_PHOTOS` + 1 photos are both refused; (11) an abandoned confirmed photo is swept after the cutoff; (12) a student gets 403 on every `/admin/loans*` route.

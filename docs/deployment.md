@@ -313,6 +313,37 @@ Work down this list against the public address, not `localhost`.
     contains a `.dump` file and an `objects/` directory.
 11. **It survives a reboot.** Reboot the machine and confirm the site returns
     without anyone logging in.
+12. **Borrowing log.** It is always on; there is nothing to enable.
+    - `LAB_TIMEZONE` must be set in `.env` to the lab's IANA zone name (for
+      example `Asia/Kolkata`). There is no default: the backend refuses to
+      start without a valid one. `LOAN_MAX_PHOTOS` (default 4) is optional.
+    - The migration must have run (`alembic upgrade head`, see step 4 above):
+      Compose does not run migrations on `up`, and without migration
+      `0008_loans` every `/loans` request fails.
+    - `PUBLIC_URL` must be the real public address: the photo links in the CSV
+      export are built from it.
+    - Smoke test: sign in, open `/borrow`, borrow an equipment item with a photo
+      and a return date, see it under ON_LOAN, return it with a photo. As staff,
+      open `/admin` → Loans, expand the row (both photos show), then **Export
+      CSV** and open a photo link as yourself (works) and as another student
+      (404).
+
+### Upgrading a deployment that predates the Postgres borrowing log
+
+Do these once, before the first start of the new version:
+
+1. In `.env`, **add** `LAB_TIMEZONE=<IANA zone>` (required; the backend refuses
+   to boot without it) and optionally `LOAN_MAX_PHOTOS=4`.
+2. In `.env`, **remove** `LOANS_SCRIPT_URL` and `LOANS_SCRIPT_SECRET`. The Apps
+   Script and Google Sheet are no longer used and can be archived by their
+   owner.
+3. Rebuild and migrate:
+   ```bash
+   git pull && docker compose up -d --build
+   docker compose exec backend alembic -c backend/alembic.ini upgrade head
+   ```
+   Migration `0008_loans` creates the `loans` and `loan_photos` tables. No data
+   needs moving: the Sheet was never in production use.
 
 ---
 
@@ -409,6 +440,14 @@ bar. It takes the host only — no `https://`, no trailing slash.
 **Login redirects to the wrong place, or Google says `redirect_uri_mismatch`.**
 `PUBLIC_URL` and the Authorized redirect URI in the Google console must agree
 exactly, including scheme.
+
+**Images and downloads fail with a signature error on a non-default port.**
+When the site is served on a port other than 80 or 443 (for example
+`HTTP_BIND=8080`), `MINIO_PUBLIC_ENDPOINT` must include the port
+(`localhost:8080`). nginx forwards the browser's `Host` header, port included,
+to MinIO (`$http_host`); an older nginx config that used `$host` dropped the
+port and every presigned link failed. If you see this, update the nginx config
+and run `docker compose up -d --build`.
 
 **Google signs you straight in without offering a choice.**
 Run check 3 above. If `hd=` appears, the container is stale — rebuild. If it
