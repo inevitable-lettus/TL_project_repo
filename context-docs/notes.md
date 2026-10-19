@@ -670,7 +670,7 @@ the smallest limit in the chain.
 
 Plain-language tour of the finished borrowing log. The first version stored
 loans in a Google Sheet through an Apps Script; on 2026-10-19 the owner moved
-everything to Postgres (the spec was `borrowing-v2.md`; its decisions now live
+everything to Postgres (the design spec's decisions now live
 in product.md, design.md and architecture.md), and the Sheet and script code
 were deleted.
 

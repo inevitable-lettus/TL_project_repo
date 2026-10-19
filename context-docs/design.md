@@ -25,9 +25,9 @@ The screens and behaviors. **Visual styling — typography, color, spacing, comp
 Fourth tab, after Moderation. Staff can view, filter, mark returned and export;
 there is no edit and no delete, which keeps the audit trail honest.
 
-- **Filter bar:** status (out / overdue / returned / used), type, search (item, borrower name or email), date range on borrowed date. **Export CSV** uses the current filters.
+- **Filter bar:** status (out / overdue / returned / used), type, search (item, borrower name or email), borrowed from / to. A total count sits beside **Export CSV**, which uses the current filters. Long lists end with a **Load N more** button.
 - **Rows:** borrower, item × quantity unit, type badge, project, borrowed, due, status badge (overdue stands out). Rows stack on mobile.
-- **Expanding a row** shows the photo grid (borrow and return photos, labelled), description, project link, return info (who, when, note), and **Mark returned** for open equipment. Staff can close a return the student forgot to log, with or without a photo; the record shows who did it.
+- **Expanding a row** shows the photo grid (borrow and return photos, labelled), description, project link, return info (who, when, note), and **Mark returned** for open equipment: an optional condition photo and an optional note. Staff can close a return the student forgot to log; the record shows who did it.
 
 ## Project content model (blog)
 

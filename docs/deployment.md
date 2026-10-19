@@ -441,6 +441,14 @@ bar. It takes the host only — no `https://`, no trailing slash.
 `PUBLIC_URL` and the Authorized redirect URI in the Google console must agree
 exactly, including scheme.
 
+**Images and downloads fail with a signature error on a non-default port.**
+When the site is served on a port other than 80 or 443 (for example
+`HTTP_BIND=8080`), `MINIO_PUBLIC_ENDPOINT` must include the port
+(`localhost:8080`). nginx forwards the browser's `Host` header, port included,
+to MinIO (`$http_host`); an older nginx config that used `$host` dropped the
+port and every presigned link failed. If you see this, update the nginx config
+and run `docker compose up -d --build`.
+
 **Google signs you straight in without offering a choice.**
 Run check 3 above. If `hd=` appears, the container is stale — rebuild. If it
 does not, the browser is the cause: a university-managed Chrome profile can be
