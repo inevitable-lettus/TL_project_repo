@@ -666,122 +666,73 @@ university involvement; Stage 2 needs IT to say who terminates HTTPS and what
 body-size limit their network imposes, since `MAX_FILE_SIZE` must sit below
 the smallest limit in the chain.
 
-### Borrowing frontend (issue #13, epic #7)
-The student side of the borrowing log lives at `/borrow`. Plain-language tour:
-- **Take photo** is a hidden file input with `capture="environment"`. On a
-  phone that opens the rear camera; on a desktop it is just a file picker. The
-  photo is only *previewed* at that point. It is downscaled and uploaded when
-  you press Borrow (same three-step presigned flow as avatars, bytes go
-  straight to MinIO), then `POST /loans` is called. Nothing is left behind if
-  you walk away from the form.
-- **Retries are safe.** The form makes one random id (`loan_id`) the first time
-  you submit and keeps it until the loan succeeds. If the network drops, you
-  press Borrow again: the same id goes out, so the server cannot create a
-  second loan. The already-uploaded photo is reused too, not uploaded again.
-- **Not configured.** If lab staff have not set up the Google Sheet, the
-  backend answers 503 and the page shows "Borrowing isn't set up yet" rather
-  than the error screen. The rest of the site is unaffected.
-- **Photo links from the Sheet** point at `/loans/photo/<id>`, a frontend page
-  with no UI: it asks the backend for a short-lived download link using your
-  own login, then redirects. Only the owner and staff get an image.
-- **Return is safe to retry.** If the return went through but the list refresh
-  after it failed, pressing Confirm again gets a 409 "already returned". The
-  page treats that 409 as success and just refreshes the list.
-- **Signed-out photo links** send you to Google sign-in (the backend answers
-  404 to anonymous callers, which used to show the "not found" page).
-- **Tap targets.** The `/borrow` text fields are at least 44px tall. This is
-  scoped to `/borrow` (`fieldClass` in `borrow-client.tsx`); the shared
-  `inputClass` is unchanged, so other pages keep their 36px fields.
-- Tests: `frontend/e2e/borrow.spec.ts`. The default run checks the page shell
-  (CI has no Sheet). Set `E2E_LOANS=1` with the fake Sheet running
-  (`uv run python -m backend.tests.fake_sheet`, `LOANS_SCRIPT_URL` pointing at
-  it) to also run borrow → view photo → return, the dropped-request retry and
-  the API-error case.
+### Borrowing log: how the pieces fit (epic #7, finished 2026-10-19)
 
-### Borrowing log: how the pieces fit (issues #9-#12, #14, epic #7)
+Plain-language tour of the finished borrowing log. The first version stored
+loans in a Google Sheet through an Apps Script; on 2026-10-19 the owner moved
+everything to Postgres (the spec was `borrowing-v2.md`; its decisions now live
+in product.md, design.md and architecture.md), and the Sheet and script code
+were deleted.
 
-Plain-language tour of the backend side of borrowing. The student page is in
-the "Borrowing frontend" entry above.
-
-- **The Sheet is the database.** There is no `loans` table. A Google Sheet holds
-  one row per loan, and staff read it (or download it as .xlsx) to audit. What
-  it costs: every "my loans" request is a round trip to Google (about 1-3
-  seconds), and if Google or the script is down, borrow / return / list fail
-  with a clear error (502 or 503) and nothing is half-written. Staff who
-  hand-edit the `loan_id`, `email` or `status` cells can break lookups. If this
-  hurts, adding a Postgres table later is a contained change.
-- **Apps Script web app.** Apps Script is Google's small scripting service that
-  lives inside a Sheet. We deploy `apps-script/loans/Code.gs` as a "web app": it
-  gets its own URL and runs code when something POSTs to it. The browser never
-  calls that URL. If it did, anyone could forge a row claiming to be any email.
-  Only FastAPI calls it, and FastAPI fills in name and email from the logged-in
-  session, never from the request body.
-- **Shared secret.** "Anyone" can reach the web app URL, so every request must
-  carry a secret, which the script checks before anything else. It travels in
-  the JSON body, not an HTTP header, because Apps Script's `doPost` cannot read
-  request headers. It lives in `.env` as `LOANS_SCRIPT_SECRET` and in the
-  script's Script Properties as `LOANS_SECRET`, never in git (the repo is
-  public). The URL is kept out of git too, and the `httpx` logger is pinned to
-  WARNING so the URL never reaches INFO logs.
-- **Formula injection.** A spreadsheet runs text that starts with `=`, `+`, `-`
-  or `@` as a formula, so an item named `=IMPORTXML(...)` could phone home when
-  staff open the Sheet. Defence: the `Loans` tab is created with plain-text
-  columns, any stored string starting with those characters also gets a leading
-  `'`, and the script strips that guard apostrophe when reading, so `=1+1`
-  comes back literally.
-- **Idempotency key (`loan_id`).** The browser makes a random id the first time
-  you press Borrow and reuses it on a retry. The script looks the id up before
-  writing; if the row exists it answers `duplicate: true` and writes nothing. So
-  a timeout followed by a retry cannot create two rows. A writer lock stops two
-  simultaneous requests racing past that check.
-- **Not found looks the same either way.** Returning someone else's loan, or one
-  that does not exist, both give 404 "Loan not found", so nobody can probe which
-  ids exist.
-- **Bad rows do not break the list.** If staff blank out a cell, that row is
-  skipped and logged (UUID loan ids only, so cell text cannot inject log lines)
-  while the student's other loans still show. Hand-typed timestamps with no
-  time zone are read as UTC.
-- **Fake Sheet for local dev.** `uv run python -m backend.tests.fake_sheet`
-  serves an in-memory stand-in on port 8099 (secret `dev-secret`). Point
-  `LOANS_SCRIPT_URL` / `LOANS_SCRIPT_SECRET` in `.env` at it and the whole flow
-  works with no Google account. The backend tests use the same class.
-- **Loan photos** are ordinary private files in MinIO (`kind = "loan_photo"`),
-  visible to the owner and staff only. The Sheet stores a link to
-  `<PUBLIC_URL>/loans/photo/<id>`, so `PUBLIC_URL` must be the real public
-  address or those links break. While fixing this, a gap was closed: a loan
-  photo could have been set as a public avatar, so avatars must now be
-  `kind = "media"`.
-- **Still pending:** the Google account that will own the real Sheet is not
-  chosen yet (issue #8), so the "Anyone" deploy check on the uni Workspace and
-  the real-Sheet / real-phone test have not been done.
-
-### Borrowing log v2 plan: Sheet → Postgres (2026-10-19, design only)
-
-Nothing above is wrong, but most of it is about to be replaced. The full spec
-is in [borrowing-v2.md](borrowing-v2.md). Here's why, in plain language:
-
-- **Why move off the Sheet.** Staff now want an admin page *inside the site*.
-  A page that has to ask Google for every row is slow and breaks whenever
-  Google or the script does. A Postgres table answers in milliseconds and
-  sits next to the users and projects it refers to. It also removes the
-  shared secret and the "which Google account owns the Sheet" problem (#8).
-  Staff still get a spreadsheet: a **CSV export** button. CSV is a plain-text
-  table that Excel opens directly.
-- **Equipment vs material.** Equipment comes back, so it gets a return date
-  and a Return step. Material gets used up, so it's logged once and is done.
-  One "type" field switches the form between the two.
-- **"Derived status".** The table doesn't store "overdue". It stores dates,
-  and the code works out *out / overdue / returned / used* each time it reads
-  a row. A stored status can drift from the dates (someone fixes a date but
-  forgets the status); a computed one can't.
-- **Join table (`loan_photos`).** One loan can have several photos. Instead of
-  stuffing a list into the loan row, a small second table holds one line per
-  photo: "this file belongs to this loan, taken at borrow (or return), shown
-  in position N". That's the standard database way to model one-to-many.
-- **Orphan photos.** Photos upload when you press Submit, and only then is the
-  loan saved. If the save never happens, a finished photo sits in storage with
-  no loan. The cleanup job, which already removes half-finished uploads, will
-  also remove these after an hour.
+- **Why Postgres.** Staff wanted an admin page *inside the site*. A page that
+  asks Google for every row is slow and breaks whenever Google or the script
+  does. A table answers in milliseconds and sits next to the users and projects
+  it refers to. It also removed the shared secret and the question of which
+  Google account owns the Sheet (issue #8, now obsolete). Staff still get a
+  spreadsheet: the **Export CSV** button on the admin Loans tab. CSV is a
+  plain-text table that Excel opens directly.
+- **Equipment vs material.** Equipment comes back, so it gets a return date and
+  a Return step. Material is used up, so it is logged once and is final. One
+  `type` field switches the form between the two.
+- **Derived status.** The table stores dates, not "overdue". The code works out
+  *out / overdue / returned / used* every time it reads a row, in one function
+  shared by every endpoint and the CSV. A stored status could drift from the
+  dates; a computed one cannot.
+- **`LAB_TIMEZONE`.** "Overdue" means "due date is before today", and today
+  depends on where you are. Containers run in UTC, so without the lab's own
+  zone a loan would read overdue hours early or late. The setting has no
+  default on purpose: the backend refuses to start without a valid IANA name
+  such as `Asia/Kolkata`.
+- **Join table (`loan_photos`).** One loan can have several photos. Rather than
+  stuffing a list into the loan row, a second table holds one line per photo:
+  which loan, borrow or return stage, and display position. That is the
+  standard way to model one-to-many in a database.
+- **Photos on `/borrow`.** "Add photo" is a file input with
+  `capture="environment"`: on a phone it opens the rear camera, on a desktop it
+  is a file picker. Photos are only previewed when picked. They are downscaled
+  and uploaded when you press Submit (the same presigned flow as avatars, bytes
+  go straight to MinIO), then `POST /loans` is called. Walk away from the form
+  and nothing is left in storage.
+- **Retries are safe.** The browser makes one random id the first time you
+  submit and keeps it until the loan succeeds. A dropped connection followed by
+  another press sends the same id, so the server returns the same loan instead
+  of creating a second one. Already-uploaded photos are reused. Returning is
+  retry-safe too: a second return gets 409 "already returned" and the page
+  treats that as success.
+- **Orphan photos.** If the loan save never happens, a finished photo sits in
+  storage with no loan. The cleanup job, which already removes half-finished
+  uploads, also removes these after `PENDING_MAX_AGE_SECONDS` (an hour).
+- **Not found looks the same either way.** Returning, or opening the photo of,
+  someone else's loan or one that does not exist gives the same 404, so nobody
+  can probe which ids exist.
+- **Loan photos are private files** in MinIO (`kind = "loan_photo"`), visible to
+  the owner and staff only. CSV photo columns link to
+  `<PUBLIC_URL>/loans/photo/<id>`, a frontend page with no UI that asks the
+  backend for a short-lived download link using *your* login and redirects, so a
+  link in a downloaded spreadsheet still needs a staff login. `PUBLIC_URL` must
+  be the real public address. A loan photo cannot be set as a public avatar:
+  avatars must be `kind = "media"`.
+- **CSV injection guard.** Excel runs text that starts with `=`, `+`, `-` or `@`
+  as a formula, so an item named `=IMPORTXML(...)` could phone home when staff
+  open the export. Any such cell gets a leading `'`, so `=1+1` opens as text.
+- **Upgrading an existing deployment.** Three things change in `.env`: add
+  `LAB_TIMEZONE` (required, boot fails without it) and `LOAN_MAX_PHOTOS`
+  (default 4), and delete `LOANS_SCRIPT_URL` / `LOANS_SCRIPT_SECRET`. Then
+  rebuild and run `alembic upgrade head`: Compose does not run migrations on
+  `up`, and without migration `0008_loans` the loans endpoints fail. See
+  `docs/deployment.md`.
+- **Left to the owner.** Close issue #8 with a note pointing at the product
+  and architecture docs, and close or relabel the v1 issues #9–#14.
 
 ### nginx dropped the port from the MinIO Host header (2026-10-19)
 

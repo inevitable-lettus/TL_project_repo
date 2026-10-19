@@ -28,7 +28,7 @@ The **landing page** is the shop window: a large auto-advancing image slider (ad
 
 **Staff** (staff = admin; two roles total)
 - Everything a student can do.
-- Use the admin dashboard (UI, no code) to: feature projects on the landing page, pin projects into the slider, promote/demote staff, and edit/hide/delete any project.
+- Use the admin dashboard (UI, no code) to: feature projects on the landing page, pin projects into the slider, promote/demote staff, and edit/hide/delete any project, and review, filter, close and export the borrowing log (Loans tab).
 
 **Public visitor**
 - Land on the slider + featured projects; browse the public showcase without logging in.
@@ -36,19 +36,29 @@ The **landing page** is the shop window: a large auto-advancing image slider (ad
 - View any student's profile page (only their public projects show).
 - Never see private projects (they don't appear and can't be opened).
 
-## Borrowing log (re-added 2026-10-14)
+## Borrowing log (re-added 2026-10-14, moved to Postgres 2026-10-19)
 
-**Who:** students log what they borrow; staff read the log in a Google Sheet (and can download it as .xlsx).
+**Who:** anyone logged in (students, faculty, staff) logs what they take from the lab. Staff see every entry on the **Loans** tab in `/admin` and export it as CSV (opens in Excel). Records are stored in the database; nothing lives in a spreadsheet or Google account.
 
 **Problem:** the lab has no record of who has which material or equipment, or in what condition it went out and came back.
 
+**Rules (settled by the owner, 2026-10-19)**
+
+- **Type picks the flow.** _Equipment_ has a return date and a return step. _Material_ is consumed: no return date, and the entry is final (status `used`).
+- **Photos:** 1 required, up to `LOAN_MAX_PHOTOS` (4) when borrowing; 1 required when returning equipment.
+- **Project is optional,** picked from the borrower's own projects. "Not for a listed project" is allowed.
+- **Item is free text** plus quantity and unit (`pcs` default, `m`, `g`, `kg`, `sheets`, `ml`, `l`). No catalog.
+- **Record only, no approval.** An entry counts the moment it is submitted.
+- **No edits after submit,** for anyone. A typo stays.
+- **Staff can view, filter, mark returned and export.** No edit, no delete.
+
 **User stories**
 
-- _Student:_ borrow an item — take a photo, enter item name, quantity, return-by date and reason; the loan is logged.
-- _Student:_ see my open loans (overdue ones flagged) and return one with a condition photo and an optional note.
-- _Staff:_ audit every loan, with both photos, in the Sheet. Loan photos are private to the borrower and staff.
+- _Borrower:_ log equipment with photos, item, quantity, project, description and return-by date; log a material with no return date.
+- _Borrower:_ see my open loans (overdue ones flagged) and return one with a condition photo and an optional note.
+- _Staff:_ audit every loan with all its photos, filter by status, type, text and date, mark a forgotten return as returned, and export the filtered list as CSV. Loan photos are private to the borrower and staff.
 
-**Out of scope:** showing loans on the student profile (planned next), overdue reminders/emails, an item catalog, inventory counts, an in-app staff view. Borrowing is optional: with no Sheet configured the page says it isn't set up and the rest of the site is unaffected. Pending (human): the owning Google account for the Sheet is not chosen yet, see [handoff.md](handoff.md) (issue #8).
+**Out of scope:** showing loans on the student profile, overdue reminders/emails, an item catalog, inventory counts, editing or deleting a loan.
 
 ## Other lab operations — removed 2026-08-02
 

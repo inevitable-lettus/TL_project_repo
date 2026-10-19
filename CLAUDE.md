@@ -2,7 +2,7 @@
 
 Public-facing web app where a university makerspace's staff and students store and browse project files, with a private mode to hide selected projects from public view. Each project is a blog-style page (rich text with inline photos/videos plus a downloads area); each student has a public profile page; staff curate the landing page (slider pins + featured projects) and manage users through an admin dashboard UI, never through code.
 
-**Scope is the project archive plus a material borrowing/return log** (Sheet-backed, see architecture.md). Other lab operations — machines directory, machine booking, issue reporting — were built in v1.1 and removed on 2026-08-02; they belong to a different student's project. Don't add them back here.
+**Scope is the project archive plus a material borrowing/return log** (stored in Postgres, with an admin Loans tab; see architecture.md). Other lab operations — machines directory, machine booking, issue reporting — were built in v1.1 and removed on 2026-08-02; they belong to a different student's project. Don't add them back here.
 
 **This is a production system in active use by the university Tinkerer Laboratory.** Security and reliability are first-class, not afterthoughts — guard auth/visibility boundaries, never expose internal services, fail loud on misconfig, keep the deploy reproducible.
 

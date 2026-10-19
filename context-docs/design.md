@@ -16,9 +16,18 @@ The screens and behaviors. **Visual styling — typography, color, spacing, comp
 | Project editor | Logged-in students/staff (owner) | Visual WYSIWYG (TipTap): headings, text marks, lists, inline image/video/diagram embeds (each embed runs the presigned upload flow), attachments manager for the downloads area, cover picker. |
 | Profile edit | Logged-in owner | Description, program, enrollment year, avatar upload. |
 | My-projects dashboard | Logged-in students/staff | The user's own projects (public and private badges), create/delete, toggle visibility. |
-| Borrow (`/borrow`) | Logged-in students/staff | Student-facing borrowing log. **BORROW.LOG** window: "Take photo" (rear camera on phones via `capture="environment"`, file picker on desktop), preview + Retake, item / quantity / return-by / reason. The photo uploads on **Submit**, not on capture, so an abandoned form leaves nothing in storage. **ON_LOAN** window: open loans (soonest due first, `overdue` badge), View photo, inline **Return** (condition photo + optional note); returned loans collapsed below. If the backend reports borrowing is not configured (503) the page shows a plain "Borrowing isn't set up yet" state instead of the error page. Mobile-first: ≥44px tap targets, no horizontal scroll at 360px. |
-| Loan photo link (`/loans/photo/<id>`) | Owner and staff | The link in the loans Sheet. Renders nothing: resolves the short-lived presigned URL with the viewer's own session and redirects to it. Signed-out → login; anyone else → the 404 page. |
-| Admin dashboard | Staff only | Tabs: **Curation** (feature + reorder, pin to slider, landing preview), **People** (promote/demote staff), **Moderation** (all projects incl. private; edit/hide/delete). All admin actions via UI — never code. |
+| Borrow (`/borrow`) | Any logged-in user (students, faculty, staff); signed-out visitors get the login redirect | Borrowing log. **BORROW.LOG** window, fields in this order: **Type** (segmented Equipment / Material, first because it changes the form), **Photos** (thumbnail grid with "Add photo", rear camera on phones via `capture="environment"`, remove buttons, 1 required up to `max_photos`), **Item**, **Quantity** plus **Unit** select, **Project** (the borrower's own projects from `GET /projects/mine`, plus "Not for a listed project"), **Description**, **Return by** (equipment only, bounded by `max_days`). Photos upload on **Submit**, not on pick, so an abandoned form leaves nothing in storage; a retry reuses photos already uploaded and the same loan `id`. **ON_LOAN** window: open equipment (soonest due first, `overdue` badge), View photos, inline **Return** (one condition photo plus an optional note). **USED.LOG**: materials logged. **RETURNED**: collapsed. USED.LOG and RETURNED are read-only. Limits (`max_days`, `max_photos`, units) come from `GET /loans/rules`, never hardcoded. Mobile-first: ≥44px tap targets, no horizontal scroll at 360px. |
+| Loan photo link (`/loans/photo/<id>`) | Owner and staff | The link in the CSV export. Renders nothing: resolves the short-lived presigned URL with the viewer's own session and redirects to it. Signed-out → login; anyone else → the 404 page. |
+| Admin dashboard | Staff only | Tabs: **Curation** (feature + reorder, pin to slider, landing preview), **People** (promote/demote staff), **Moderation** (all projects incl. private; edit/hide/delete), **Loans** (see below). All admin actions via UI — never code. |
+
+### Admin Loans tab
+
+Fourth tab, after Moderation. Staff can view, filter, mark returned and export;
+there is no edit and no delete, which keeps the audit trail honest.
+
+- **Filter bar:** status (out / overdue / returned / used), type, search (item, borrower name or email), date range on borrowed date. **Export CSV** uses the current filters.
+- **Rows:** borrower, item × quantity unit, type badge, project, borrowed, due, status badge (overdue stands out). Rows stack on mobile.
+- **Expanding a row** shows the photo grid (borrow and return photos, labelled), description, project link, return info (who, when, note), and **Mark returned** for open equipment. Staff can close a return the student forgot to log, with or without a photo; the record shows who did it.
 
 ## Project content model (blog)
 
