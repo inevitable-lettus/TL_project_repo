@@ -268,6 +268,42 @@ def my_loans(
     return [to_loan_out(loan, today) for loan in open_items + rest]
 
 
+def mark_returned(
+    db: Session,
+    loan: Loan,
+    user: User,
+    photo_file_id: uuid.UUID | None,
+    note: str,
+) -> LoanOut:
+    """Close an open equipment loan on behalf of `user` (borrower or staff)."""
+    if loan.type == "material":
+        raise HTTPException(status_code=400, detail="Materials aren't returned.")
+    if loan.returned_at is not None:
+        raise HTTPException(status_code=409, detail="This loan is already returned")
+    if photo_file_id is not None:
+        require_unlinked_loan_photo(db, user, photo_file_id)
+
+    loan_id = loan.id
+    loan.returned_at = func.now()
+    loan.returned_by_id = user.id
+    loan.return_note = note or None
+    if photo_file_id is not None:
+        db.add(
+            LoanPhoto(
+                file_id=photo_file_id, loan_id=loan_id, stage="return", position=0
+            )
+        )
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, detail="photo is already on a loan"
+        ) from None
+    db.expire_all()
+    return to_loan_out(load_loan(db, loan_id), lab_today())
+
+
 @router.post("/{loan_id}/return", response_model=LoanOut)
 def return_loan(
     loan_id: uuid.UUID,
@@ -278,26 +314,4 @@ def return_loan(
     loan = load_loan(db, loan_id, lock=True)
     if loan is None or loan.borrower_id != user.id:
         raise HTTPException(status_code=404, detail="Loan not found")
-    if loan.type == "material":
-        raise HTTPException(status_code=400, detail="Materials aren't returned.")
-    if loan.returned_at is not None:
-        raise HTTPException(status_code=409, detail="This loan is already returned")
-    require_unlinked_loan_photo(db, user, body.photo_file_id)
-
-    loan.returned_at = func.now()
-    loan.returned_by_id = user.id
-    loan.return_note = body.note or None
-    db.add(
-        LoanPhoto(
-            file_id=body.photo_file_id, loan_id=loan.id, stage="return", position=0
-        )
-    )
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=400, detail="photo is already on a loan"
-        ) from None
-    db.expire_all()
-    return to_loan_out(load_loan(db, loan_id), lab_today())
+    return mark_returned(db, loan, user, body.photo_file_id, body.note)

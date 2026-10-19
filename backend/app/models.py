@@ -224,6 +224,8 @@ class Loan(Base):
     return_note: Mapped[str | None] = mapped_column(String)
 
     project: Mapped[Project | None] = relationship()
+    borrower: Mapped[User] = relationship(foreign_keys=[borrower_id])
+    returned_by: Mapped[User | None] = relationship(foreign_keys=[returned_by_id])
     photos: Mapped[list["LoanPhoto"]] = relationship(order_by="LoanPhoto.position")
 
 
