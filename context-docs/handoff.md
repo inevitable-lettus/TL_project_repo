@@ -40,6 +40,8 @@ Students log materials they borrow and return; the log is a Google Sheet written
 
 **Pending (human, issue #8):** choose the Google account that will own the Apps Script web app and the Sheet (a lab/staff account, not a student's), then run the "Anyone" web-app deploy check on the uni Workspace. Until then `LOANS_SCRIPT_URL` / `LOANS_SCRIPT_SECRET` stay empty (an obvious placeholder; borrowing is disabled and `/borrow` says so). No real URL or secret goes in the repo. Blocks real-Sheet testing and go-live of borrowing only.
 
+**Redesign decided 2026-10-19 (v2, not built):** the owner moved loans from the Sheet to Postgres. The redesign adds an in-app admin **Loans** tab with CSV export, an equipment-vs-material type, multiple photos, and an optional project link. The Apps Script and Sheet code will be deleted, which makes #8 obsolete. Full spec and build order: [borrowing-v2.md](borrowing-v2.md). Build it on this branch, then merge to `main`.
+
 ## Session context — read this to resume (kept current at the end of every phase)
 
 - **Working tree**: work happens on branch `claude/project-review-architecture-92df3e` (worktree under `.claude/worktrees/`). `.env` is gitignored — copy it from the main repo checkout into the worktree before booting the stack. `frontend/node_modules` needs `npm ci` in a fresh worktree.
@@ -126,3 +128,8 @@ Migration 0002 (Phase 2):
    - Apps Script web app + Sheet (`apps-script/loans/`), private `loan_photo` upload slot, `/loans` API with a fake Sheet for dev (`uv run python -m backend.tests.fake_sheet`), `/borrow` page, `/loans/photo/[id]` redirect.
    - **done =** (1) all backend + frontend checks green, no regressions; (2) on a phone against a real test Sheet: borrow (camera opens) → row appears with a working photo link → return with photo → row shows `returned`; (3) photo link opens for owner and staff, 404 for another student; (4) same `loan_id` submitted twice → one row, and an item named `=1+1` is stored as text; (5) `LOANS_SCRIPT_URL` unset → `/borrow` shows a clear "borrowing isn't set up yet" message and the rest of the site is unaffected.
    - **Status:** items 1, 3 (by tests), 4 and 5 are covered by backend/e2e tests against the fake Sheet. Items 2 and 4 on a **real** Sheet and a real phone camera are not yet verified: waiting on the owning account (#8).
+   - **Superseded by phase 10** (2026-10-19). Don't spend time on real-Sheet verification.
+
+10. **Borrowing log v2: Postgres + admin page** (designed 2026-10-19, not started)
+   - Spec, decisions, data model, API, screens and the six build steps: [borrowing-v2.md](borrowing-v2.md).
+   - **done =** the 12-point list at the end of that file, plus all backend and frontend checks green.
