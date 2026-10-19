@@ -91,7 +91,16 @@ function useAttempt() {
     uploaded.current.delete(key);
   };
 
-  return { state, error, busy, run, forgetPhoto };
+  // An edit after a failure makes the next submit a new loan, not a retry: if
+  // the failed attempt did land, reusing its id would silently return that
+  // loan and drop the edit. Its photos may already be linked to it, so they
+  // upload again too (an unlinked leftover is swept by the cleanup job).
+  const restart = () => {
+    attemptId.current = null;
+    uploaded.current.clear();
+  };
+
+  return { state, error, busy, run, forgetPhoto, restart };
 }
 
 function TypeToggle({
@@ -158,6 +167,15 @@ function BorrowForm({
   const [lastDay] = useState(() => localDate(rules.max_days));
   const [confirmed, setConfirmed] = useState<string | null>(null);
 
+  // Every field change goes through `edit`, so a retry is only ever a retry
+  // of exactly what was submitted.
+  const edit =
+    <T,>(setter: (value: T) => void) =>
+    (value: T) => {
+      attempt.restart();
+      setter(value);
+    };
+
   const equipment = type === "equipment";
   const ready =
     photos.length > 0 &&
@@ -216,7 +234,11 @@ function BorrowForm({
           void submit();
         }}
       >
-        <TypeToggle value={type} disabled={attempt.busy} onChange={setType} />
+        <TypeToggle
+          value={type}
+          disabled={attempt.busy}
+          onChange={edit(setType)}
+        />
         <div>
           <SysLabel>Photos</SysLabel>
           <div className="mt-1.5">
@@ -224,9 +246,12 @@ function BorrowForm({
               photos={photos}
               max={rules.max_photos}
               disabled={attempt.busy}
-              onAdd={(photo) => setPhotos((current) => [...current, photo])}
+              onAdd={(photo) => {
+                attempt.restart();
+                setPhotos((current) => [...current, photo]);
+              }}
               onRemove={(photo) => {
-                attempt.forgetPhoto(photo.key);
+                attempt.restart();
                 dropPhotos([photo]);
                 setPhotos((current) =>
                   current.filter((other) => other.key !== photo.key),
@@ -244,7 +269,7 @@ function BorrowForm({
             placeholder={
               equipment ? "e.g. Soldering iron" : "e.g. PLA filament"
             }
-            onChange={(event) => setItemName(event.target.value)}
+            onChange={(event) => edit(setItemName)(event.target.value)}
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -257,7 +282,7 @@ function BorrowForm({
               max={99999}
               className={fieldClass}
               value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
+              onChange={(event) => edit(setQuantity)(event.target.value)}
             />
           </Field>
           <Field id="borrow-unit" label="Unit">
@@ -265,7 +290,7 @@ function BorrowForm({
               id="borrow-unit"
               className={fieldClass}
               value={unit}
-              onChange={(event) => setUnit(event.target.value)}
+              onChange={(event) => edit(setUnit)(event.target.value)}
             >
               {rules.units.map((option) => (
                 <option key={option} value={option}>
@@ -280,7 +305,7 @@ function BorrowForm({
             id="borrow-project"
             className={fieldClass}
             value={projectId}
-            onChange={(event) => setProjectId(event.target.value)}
+            onChange={(event) => edit(setProjectId)(event.target.value)}
           >
             <option value="">Not for a listed project</option>
             {projects.map((project) => (
@@ -298,7 +323,7 @@ function BorrowForm({
             maxLength={500}
             placeholder="What it is and what it is for"
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
+            onChange={(event) => edit(setDescription)(event.target.value)}
           />
         </Field>
         {equipment && (
@@ -311,7 +336,7 @@ function BorrowForm({
               suppressHydrationWarning // server and browser dates can differ
               className={fieldClass}
               value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
+              onChange={(event) => edit(setDueDate)(event.target.value)}
             />
           </Field>
         )}
