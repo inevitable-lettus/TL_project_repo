@@ -754,3 +754,31 @@ the "Borrowing frontend" entry above.
 - **Still pending:** the Google account that will own the real Sheet is not
   chosen yet (issue #8), so the "Anyone" deploy check on the uni Workspace and
   the real-Sheet / real-phone test have not been done.
+
+### Borrowing log v2 plan: Sheet → Postgres (2026-10-19, design only)
+
+Nothing above is wrong, but most of it is about to be replaced. The full spec
+is in [borrowing-v2.md](borrowing-v2.md). Here's why, in plain language:
+
+- **Why move off the Sheet.** Staff now want an admin page *inside the site*.
+  A page that has to ask Google for every row is slow and breaks whenever
+  Google or the script does. A Postgres table answers in milliseconds and
+  sits next to the users and projects it refers to. It also removes the
+  shared secret and the "which Google account owns the Sheet" problem (#8).
+  Staff still get a spreadsheet: a **CSV export** button. CSV is a plain-text
+  table that Excel opens directly.
+- **Equipment vs material.** Equipment comes back, so it gets a return date
+  and a Return step. Material gets used up, so it's logged once and is done.
+  One "type" field switches the form between the two.
+- **"Derived status".** The table doesn't store "overdue". It stores dates,
+  and the code works out *out / overdue / returned / used* each time it reads
+  a row. A stored status can drift from the dates (someone fixes a date but
+  forgets the status); a computed one can't.
+- **Join table (`loan_photos`).** One loan can have several photos. Instead of
+  stuffing a list into the loan row, a small second table holds one line per
+  photo: "this file belongs to this loan, taken at borrow (or return), shown
+  in position N". That's the standard database way to model one-to-many.
+- **Orphan photos.** Photos upload when you press Submit, and only then is the
+  loan saved. If the save never happens, a finished photo sits in storage with
+  no loan. The cleanup job, which already removes half-finished uploads, will
+  also remove these after an hour.
