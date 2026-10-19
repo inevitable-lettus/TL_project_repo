@@ -1,6 +1,8 @@
 import type {
+  AdminLoanPage,
   DownloadUrl,
   Loan,
+  LoanFilters,
   LoanRules,
   LoanType,
   Profile,
@@ -156,6 +158,15 @@ export const api = {
       method: "PATCH",
       body: { role },
     }),
+  adminLoans: (filters: LoanFilters, offset = 0, cookie?: string) =>
+    request<AdminLoanPage>(
+      `/admin/loans?${loanQuery(filters)}&limit=${ADMIN_LOAN_PAGE}&offset=${offset}`,
+      { cookie },
+    ),
+  adminReturnLoan: (
+    loanId: string,
+    body: { photo_file_id: string | null; note: string },
+  ) => request<Loan>(`/admin/loans/${loanId}/return`, { method: "POST", body }),
   adminSetFeatured: (projectIds: string[]) =>
     request<{ featured: number }>("/admin/featured", {
       method: "PUT",
@@ -167,6 +178,26 @@ export const api = {
       body: { pinned },
     }),
 };
+
+export const ADMIN_LOAN_PAGE = 50;
+
+// Only filters that are set go in the query string; the API treats a missing
+// parameter as "any".
+export function loanQuery(filters: LoanFilters): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    const trimmed = value.trim();
+    if (trimmed) params.set(key, trimmed);
+  }
+  return params.toString();
+}
+
+// The browser downloads the CSV straight from the API (same origin, session
+// cookie), with the same filters as the list on screen.
+export function loanCsvUrl(filters: LoanFilters): string {
+  const query = loanQuery(filters);
+  return `/api/admin/loans/export.csv${query ? `?${query}` : ""}`;
+}
 
 type HasCover = {
   cover_file_id: string | null;
