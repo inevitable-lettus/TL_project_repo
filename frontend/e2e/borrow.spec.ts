@@ -1,4 +1,10 @@
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import {
+  expect,
+  test,
+  type Browser,
+  type Locator,
+  type Page,
+} from "@playwright/test";
 import { createProject, PNG_BYTES, testLogin } from "./helpers";
 
 const suffix = Date.now();
@@ -34,6 +40,14 @@ async function addPhotos(page: Page, count: number) {
     await page.getByTestId("borrow-photo-input").setInputFiles(photo);
   }
   await expect(page.getByTestId("photo-count")).toContainText(`${count} of`);
+}
+
+async function expectTapTarget(target: Locator, name: string) {
+  await expect
+    .poll(async () => (await target.boundingBox())?.height ?? 0, {
+      message: `${name} tap target height`,
+    })
+    .toBeGreaterThanOrEqual(44);
 }
 
 async function fillEquipment(page: Page, item: string) {
@@ -249,10 +263,15 @@ test("at 360px: no horizontal scroll and 44px tap targets", async ({
   await addPhotos(page, 2);
   await fillEquipment(page, "Long loan");
 
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth > window.innerWidth,
-  );
-  expect(overflow).toBe(false);
+  // Retry the measurements: a one-shot read can land mid-layout (reveal
+  // animation, late image or font), so poll until the box settles.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      ),
+    )
+    .toBe(false);
   for (const label of [
     "Item",
     "Quantity",
@@ -261,12 +280,10 @@ test("at 360px: no horizontal scroll and 44px tap targets", async ({
     "Description",
     "Return by",
   ]) {
-    const box = await page.getByLabel(label).boundingBox();
-    expect(box!.height, label).toBeGreaterThanOrEqual(44);
+    await expectTapTarget(page.getByLabel(label), label);
   }
   for (const name of ["Equipment", "Material", "Add photo", "Remove photo 1"]) {
-    const box = await page.getByRole("button", { name }).boundingBox();
-    expect(box!.height, name).toBeGreaterThanOrEqual(44);
+    await expectTapTarget(page.getByRole("button", { name }), name);
   }
   await context.close();
 });
