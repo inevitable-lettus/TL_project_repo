@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { DUR, EASE } from "@/lib/motion";
-import type { ProjectListItem, User } from "@/lib/types";
+import type { AdminLoanPage, ProjectListItem, User } from "@/lib/types";
 import {
   Badge,
   Button,
@@ -14,13 +14,15 @@ import {
   SysLabel,
   Window,
 } from "@/components/ui";
+import { LoansTab } from "./loans-tab";
 
-type Tab = "curation" | "people" | "moderation";
+type Tab = "curation" | "people" | "moderation" | "loans";
 
 const TABS = [
   ["curation", "Curation"],
   ["people", "People"],
   ["moderation", "Moderation"],
+  ["loans", "Loans"],
 ] as const satisfies readonly (readonly [Tab, string])[];
 
 const tabClass = (active: boolean) =>
@@ -33,11 +35,13 @@ export function AdminClient({
   initialFeatured,
   initialUsers,
   initialProjects,
+  initialLoans,
 }: {
   me: User;
   initialFeatured: ProjectListItem[];
   initialUsers: User[];
   initialProjects: ProjectListItem[];
+  initialLoans: AdminLoanPage;
 }) {
   const [tab, setTab] = useState<Tab>("curation");
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +57,7 @@ export function AdminClient({
 
   // Arrow keys move between tabs. Required by the roving tabindex below —
   // without it only the selected tab is focusable and a keyboard user could
-  // never reach the other two.
+  // never reach the others.
   const moveTab = (event: React.KeyboardEvent) => {
     const delta =
       event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
@@ -120,6 +124,7 @@ export function AdminClient({
           {tab === "moderation" && (
             <ModerationTab initialProjects={initialProjects} run={run} />
           )}
+          {tab === "loans" && <LoansTab initialPage={initialLoans} run={run} />}
           {error && (
             <p role="alert" className="mt-4 font-mono text-xs text-fg-danger">
               {error}

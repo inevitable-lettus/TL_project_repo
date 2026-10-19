@@ -187,6 +187,37 @@ test("a dropped submit is retried as one loan with the same id", async ({
   await context.close();
 });
 
+test("an edit after a failed submit is sent as a new loan", async ({
+  browser,
+}) => {
+  const { context, page } = await signedInPage(browser, "editor");
+  await page.goto("/borrow");
+
+  // The first submit lands on the server; only its reply is lost.
+  const loanIds: string[] = [];
+  await page.route("**/api/loans", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    loanIds.push(route.request().postDataJSON().id);
+    if (loanIds.length > 1) return route.continue();
+    await route.fetch();
+    return route.abort();
+  });
+
+  await addPhotos(page, 1);
+  await fillEquipment(page, `First name ${suffix}`);
+  const submit = page.getByRole("button", { name: "Borrow", exact: true });
+  await submit.click();
+  await expect(page.getByTestId("upload-error")).toBeVisible();
+
+  await page.getByLabel("Item").fill(`Edited name ${suffix}`);
+  await submit.click();
+  await expect(page.getByTestId("borrow-confirmation")).toContainText(
+    `Edited name ${suffix}`,
+  );
+  expect(new Set(loanIds).size).toBe(2);
+  await context.close();
+});
+
 test("submit is blocked without a photo and Add photo stops at the limit", async ({
   browser,
 }) => {
