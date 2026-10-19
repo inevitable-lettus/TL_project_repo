@@ -97,7 +97,8 @@ services:
         condition: service_healthy
 
   backup-files:
-    image: minio/mc
+    # Same pinned image as `minio`: it bundles the client as `mcli`.
+    image: docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z@sha256:635197cb9f36d01bee221d34d1c7d7960f6a95c48b0b6c01d99cd13bdae51a46
     restart: unless-stopped
     logging: *logging
     env_file: .env
@@ -111,8 +112,8 @@ services:
     command:
       - |
         while true; do
-          mc alias set store "http://minio:9000" "$$MINIO_ACCESS_KEY" "$$MINIO_SECRET_KEY" &&
-          mc mirror --overwrite "store/$$MINIO_BUCKET" /backups/objects
+          mcli alias set store "http://minio:9000" "$$MINIO_ACCESS_KEY" "$$MINIO_SECRET_KEY" &&
+          mcli mirror --overwrite "store/$$MINIO_BUCKET" /backups/objects
           sleep "$${BACKUP_INTERVAL_SECONDS:-86400}"
         done
     volumes:
@@ -138,7 +139,11 @@ services:
       retries: 10
 
   minio:
-    image: minio/minio
+    # minio/minio is no longer published. pgsty/silo is a maintained fork with
+    # the same env vars, command and on-disk format. The digest is what is
+    # pulled (the tag is for humans); verify before bumping with
+    # `gh attestation verify oci://<image>@<digest> -R pgsty/silo`.
+    image: docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z@sha256:635197cb9f36d01bee221d34d1c7d7960f6a95c48b0b6c01d99cd13bdae51a46
     restart: unless-stopped
     logging: *logging
     command: server /data --console-address ":9001"
@@ -148,7 +153,7 @@ services:
     volumes:
       - ${MINIODATA_PATH:-miniodata}:/data
     healthcheck:
-      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      test: ["CMD-SHELL", "mcli ready local || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 10
