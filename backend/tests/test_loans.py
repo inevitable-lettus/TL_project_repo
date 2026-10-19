@@ -236,6 +236,29 @@ def test_same_id_twice_is_one_row_and_same_201(db, student, other):
     assert stranger.post("/loans", json=reuse).status_code == 409
 
 
+def test_same_id_racing_submit_returns_the_winner(monkeypatch, db, student):
+    # Two submits with one id race past the existence check: the loser's
+    # insert hits the primary key and must answer like a retry, not 500.
+    client, _ = student
+    body = loan_body(client)
+    first = client.post("/loans", json=body)
+    real = loans.existing_for_retry
+    calls = []
+
+    def racing(db, user, loan_id):
+        calls.append(loan_id)
+        return None if len(calls) == 1 else real(db, user, loan_id)
+
+    monkeypatch.setattr(loans, "existing_for_retry", racing)
+    # In a real race the photos aren't linked yet when both requests check.
+    monkeypatch.setattr(loans, "require_unlinked_loan_photo", lambda *args: None)
+    second = client.post("/loans", json=body)
+    assert second.status_code == 201
+    assert second.json() == first.json()
+    assert len(calls) == 2
+    assert db.scalar(select(func.count()).select_from(Loan)) == 1
+
+
 def test_cannot_link_someone_elses_project(db, student, other):
     # Done 9, first half.
     client, _ = student

@@ -229,12 +229,12 @@ def create_loan(
             due_date=body.due_date,
         )
     )
-    db.flush()
-    db.add_all(
-        LoanPhoto(file_id=file_id, loan_id=body.id, stage="borrow", position=index)
-        for index, file_id in enumerate(body.photo_file_ids)
-    )
     try:
+        db.flush()
+        db.add_all(
+            LoanPhoto(file_id=file_id, loan_id=body.id, stage="borrow", position=index)
+            for index, file_id in enumerate(body.photo_file_ids)
+        )
         db.commit()
     except IntegrityError:
         # A concurrent retry won the race (same id) or linked a photo first.
