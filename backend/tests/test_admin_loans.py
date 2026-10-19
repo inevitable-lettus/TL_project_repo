@@ -323,3 +323,13 @@ def test_csv_honours_filters_and_has_no_pagination(student, staff):
     )
     assert [row[4] for row in rows] == ["Drill"]
     assert equipment
+
+
+@pytest.mark.parametrize("lead", ["\t", "\r"])
+def test_csv_neutralises_leading_tab_and_cr(db, student, staff, lead):
+    client, _ = student
+    # The API strips input, so a leading control character can only come from the DB.
+    loan_id = open_loan(client)
+    set_loan(db, loan_id, item_name=f"{lead}=1+1")
+    header, row = csv_rows(staff[0].get("/admin/loans/export.csv"))
+    assert row[header.index("Item")] == f"'{lead}=1+1"

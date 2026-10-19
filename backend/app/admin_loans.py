@@ -33,7 +33,7 @@ from .models import Loan, User
 
 router = APIRouter(prefix="/admin/loans", tags=["admin-loans"])
 
-FORMULA_STARTS = ("=", "+", "-", "@")
+FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
 
 
 class PersonRef(BaseModel):
