@@ -68,6 +68,7 @@ jobs:
       GOOGLE_CLIENT_ID: ci-unused.apps.googleusercontent.com
       GOOGLE_CLIENT_SECRET: ci-unused
       GOOGLE_HOSTED_DOMAIN: uni.edu
+      LAB_TIMEZONE: Asia/Kolkata
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
